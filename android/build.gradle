@@ -1,0 +1,4 @@
+// Root build file — the app module has zero library dependencies.
+plugins {
+    id 'com.android.application' version '8.13.2' apply false
+}

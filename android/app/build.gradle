@@ -1,0 +1,45 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Release signing config lives in keystore.properties (gitignored) next to this file.
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('keystore.properties')
+if (keystorePropsFile.exists()) {
+    keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+
+android {
+    namespace 'p4.fretboardtrainer'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "p4.fretboardtrainer"
+        minSdk 21
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+        release {
+            if (keystorePropsFile.exists()) {
+                storeFile rootProject.file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.release
+        }
+        // debug builds are signed with the auto-generated debug keystore
+    }
+}
+
+// No dependencies block — the app is a self-contained WebView shell.

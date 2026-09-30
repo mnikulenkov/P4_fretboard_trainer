@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mini fretboard: horizontal strings, vertical frets, two finger dots.
+     Geometry kept inside the adaptive-icon safe zone (center 66dp circle). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- strings -->
+    <path
+        android:strokeColor="#B0B0B0"
+        android:strokeWidth="2"
+        android:pathData="M32,38 L76,38 M32,48 L76,48 M32,58 L76,58 M32,68 L76,68"/>
+
+    <!-- frets -->
+    <path
+        android:strokeColor="#666666"
+        android:strokeWidth="2.5"
+        android:pathData="M40,32 L40,74 M54,32 L54,74 M68,32 L68,74"/>
+
+    <!-- finger dots (app accent color) -->
+    <path
+        android:fillColor="#00CC99"
+        android:pathData="M47,48 m-4.2,0 a4.2,4.2 0 1,0 8.4,0 a4.2,4.2 0 1,0 -8.4,0 M61,58 m-4.2,0 a4.2,4.2 0 1,0 8.4,0 a4.2,4.2 0 1,0 -8.4,0"/>
+</vector>

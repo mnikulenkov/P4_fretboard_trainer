@@ -1,0 +1,15 @@
+# Gradle
+.gradle/
+build/
+
+# IDE
+.idea/
+*.iml
+
+# Local machine paths
+local.properties
+
+# Signing — back these up outside the repo, they are required to ship updates
+keystore.properties
+release.keystore
+*.keystore

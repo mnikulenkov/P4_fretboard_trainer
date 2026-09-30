@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the web app's dark theme (styles.css :root defaults) -->
+    <color name="app_bg">#1A1A1A</color>
+    <color name="accent">#00CC99</color>
+    <color name="ic_launcher_background">#1A1A1A</color>
+</resources>

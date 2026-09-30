@@ -1,0 +1,51 @@
+# --- Not part of the shipped app ------------------------------------------------
+
+# Node regression tests (dev-only; run with node, never loaded by the web app
+# or bundled into the APK)
+test_*.js
+
+# The chord book PDF (third-party reference material — keep out of the repo)
+charts_P4_Guitar.pdf
+*.pdf
+
+# --- Temp / scratch --------------------------------------------------------------
+
+# Headless-verification harness pages generated during development
+.harness_*.html
+
+# Logs and editor/OS droppings
+*.log
+*.swp
+*~
+.vscode/
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Node (server.js needs no deps today, just in case)
+node_modules/
+package-lock.json
+
+# --- Android build artifacts and secrets -----------------------------------------
+# (android/.gitignore repeats these — kept here too so the rules survive if
+# that file is ever lost)
+
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+
+# Machine-local SDK path
+android/local.properties
+
+# Release signing — NEVER commit; back these up outside the repo, they are
+# required to ship updates
+android/keystore.properties
+android/release.keystore
+android/*.keystore
+*.jks
+
+# Built binaries
+*.apk
+*.aab
