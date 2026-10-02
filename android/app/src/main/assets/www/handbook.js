@@ -213,25 +213,30 @@ function buildIntervalSectionModel(opts) {
     return { intervals: intervals };
 }
 
-// Section 5 - the mnemonics map: frets 1-13 per string letter, exactly the logic the
-// old renderMnemonicScheme() ran inline (index.html), now as data
+// Section 5 - the mnemonics map: one octave per string letter, open string
+// (fret 0) through fret 12 - the strip every fretboard diagram promises:
+// first column the open string, last column the octave. (The drills still
+// read the window from fret 1.)
 function buildMnemonicSchemeModel(opts) {
     const letters = lettersForCount(opts.stringCount) || MNEMONIC_LETTERS.slice(0, 6);
     const rows = letters.map(letter => {
         const shapes = MNEMONIC_ROWS[letter];
         const cells = [];
-        for (let fret = 1; fret <= 13; fret++) {
+        for (let fret = 0; fret <= 12; fret++) {
             const noteLetter = letterAtFret(letter, fret);
             let shapeIndex = -1;
             shapes.forEach((shape, index) => {
                 if (shape.frets.indexOf(fret) !== -1) shapeIndex = index;
             });
-            // fret 13 = fret 1 one octave up: the first shape of the NEXT cycle.
-            // Flagged so the renderer can dim it - each string must read as
-            // exactly 3 shape groups, not 3 plus a phantom fourth. (Sharp frets
-            // also match no shape, but they are gap cells, not wrap cells.)
-            const wrap = noteLetter !== null && shapeIndex === -1;
-            if (wrap) shapeIndex = 0;
+            // fret 0 = the open string: the PREVIOUS octave's end of the cycle.
+            // Flagged so the renderer dims it - each string must read as exactly
+            // 3 shape groups growing out of that ghost. On the F and C strings
+            // the open note is a natural (E, B) and IS the last shape's top
+            // note one octave down, so it keeps that shape's tint; on the other
+            // strings it is one of the skipped sharps, shown by name. (Sharp
+            // frets 1-12 also match no shape, but they are plain gap cells.)
+            const wrap = fret === 0;
+            if (wrap && noteLetter !== null) shapeIndex = 2;
             let internal = false;
             shapes.forEach(shape => {
                 if (fret > shape.frets[0] && fret < shape.frets[shape.frets.length - 1]) {
@@ -239,7 +244,8 @@ function buildMnemonicSchemeModel(opts) {
                 }
             });
             cells.push({ fret: fret, noteLetter: noteLetter, tint: shapeIndex,
-                internal: internal, wrap: wrap });
+                internal: internal, wrap: wrap,
+                openName: wrap ? MNEMONIC_OPEN_NOTES[letter] : null });
         }
         return { letter: letter, cells: cells };
     });
@@ -1052,7 +1058,7 @@ function hbRenderScheme() {
     const headerLabel = document.createElement('span');
     headerLabel.className = 'mn-string-label';
     header.appendChild(headerLabel);
-    for (let fret = 1; fret <= 13; fret++) {
+    for (let fret = 0; fret <= 12; fret++) {
         const number = document.createElement('span');
         number.className = 'mn-fret-number';
         number.textContent = fret;
@@ -1072,12 +1078,17 @@ function hbRenderScheme() {
             cellEl.className = 'mn-cell';
             if (cell.noteLetter !== null) {
                 cellEl.classList.add(tints[cell.tint]);
-                if (cell.wrap) cellEl.classList.add('mn-wrap');
                 cellEl.textContent = cell.noteLetter;
+            } else if (cell.openName) {
+                // The open string of an accidental-tuned string: shown by name,
+                // dimmed like the gap sharp it is
+                cellEl.classList.add('mn-gap-sep');
+                cellEl.textContent = cell.openName;
             } else {
                 cellEl.classList.add(cell.internal ? 'mn-gap-internal' : 'mn-gap-sep');
                 cellEl.textContent = cell.internal ? '#' : '·';
             }
+            if (cell.wrap) cellEl.classList.add('mn-wrap');
             rowEl.appendChild(cellEl);
         });
         container.appendChild(rowEl);

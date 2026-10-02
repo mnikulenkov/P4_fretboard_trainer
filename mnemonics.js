@@ -1,7 +1,7 @@
 // Shape-mnemonic system for Note mode's "Mnemonics" suboption.
 //
 // For instruments tuned a HALF STEP DOWN from all-fourths tuning (7-string
-// reference: open strings A# D# G# C# F# B D#), fret 1 of every string lands
+// reference: open strings A# D# G# C# F# B E), fret 1 of every string lands
 // on a natural note, and the C-major naturals of each string group into 3
 // fixed shapes with exactly one skipped (sharp) fret between neighbouring
 // shapes. Each string is identified by its fret-1 letter:
@@ -35,6 +35,11 @@ const MNEMONIC_ROWS = {
 const MNEMONIC_LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const MNEMONIC_PC_TO_LETTER = { 0: 'C', 2: 'D', 4: 'E', 5: 'F', 7: 'G', 9: 'A', 11: 'B' };
 
+// Open-string note of the string whose fret-1 note is the given letter (the
+// tuning is a half step down, so the open string sits one semitone below it):
+// a natural on the F and C strings (E, B), a sharp everywhere else
+const MNEMONIC_OPEN_NOTES = { F: 'E', C: 'B', G: 'F#', D: 'C#', A: 'G#', E: 'D#', B: 'A#' };
+
 // The fret patterns that actually occur on the strings (x = note, _ = skipped
 // fret). The half-step pair 'xx' (2m) never occurs - every E-F and B-C pair
 // gets absorbed into a 3-note shape - so it is never offered as an answer.
@@ -59,10 +64,13 @@ function isMnemonicTuningAvailable(numStrings, lowestPc) {
     return false;
 }
 
-// The natural note letter this string plays at the given fret, or null when
-// the fret is an accidental (one of the skipped sharps)
+// The natural note letter this string plays at the given fret (fret 0 = the
+// open string), or null when the fret is an accidental (one of the skipped
+// sharps). The mod is normalized so fret 0 works on every string (pc 0 - 1
+// would otherwise go negative on the C string).
 function letterAtFret(stringLetter, fret) {
-    return MNEMONIC_PC_TO_LETTER[(MNEMONIC_LETTER_PC[stringLetter] + fret - 1) % 12] || null;
+    const pc = (MNEMONIC_LETTER_PC[stringLetter] + fret - 1) % 12;
+    return MNEMONIC_PC_TO_LETTER[pc < 0 ? pc + 12 : pc] || null;
 }
 
 // Fret pattern of a shape: 'x_xx' etc.
@@ -216,6 +224,7 @@ if (typeof module !== 'undefined' && module.exports) {
         MNEMONIC_LETTERS: MNEMONIC_LETTERS,
         MNEMONIC_ROWS: MNEMONIC_ROWS,
         MNEMONIC_PATTERNS: MNEMONIC_PATTERNS,
+        MNEMONIC_OPEN_NOTES: MNEMONIC_OPEN_NOTES,
         lettersForCount: lettersForCount,
         isMnemonicTuningAvailable: isMnemonicTuningAvailable,
         letterAtFret: letterAtFret,

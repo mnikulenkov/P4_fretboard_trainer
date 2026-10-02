@@ -2029,9 +2029,10 @@ button#heatmap-toggle {
 .mn-shape-a { background: rgba(0, 204, 153, 0.30); }
 .mn-shape-b { background: rgba(0, 153, 255, 0.30); }
 .mn-shape-c { background: rgba(255, 153, 0, 0.30); }
-/* Fret 13 = fret 1 one octave up: the first shape of the NEXT cycle, dimmed to
-   a ghost so each string reads as exactly 3 shape groups (it keeps the first
-   shape's tint because that is what it is - an octave higher) */
+/* The open-string column (fret 0): the previous octave's end of the cycle,
+   dimmed to a ghost so each string reads as exactly 3 shape groups (a natural
+   open keeps the last shape's tint because that is what it is - an octave
+   lower; an accidental open shows its sharp name instead) */
 .mn-wrap {
     opacity: 0.45;
     outline: 1px dashed currentColor;
