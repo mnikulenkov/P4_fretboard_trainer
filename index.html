@@ -725,7 +725,10 @@
             const drill = getMnemonicDrill();
             let question;
             if (drill === 'note') question = randomNoteDrill(availableLetters);
-            else if (drill === 'neighbour') question = randomNeighbourDrill(availableLetters);
+            // Only ask for a neighbour the rendered board actually shows: the
+            // shape past fret 12 exists on the neck just when maxFret reaches it
+            else if (drill === 'neighbour') question = randomNeighbourDrill(availableLetters,
+                Math.max(12, parseInt(document.getElementById('maxFret').value)));
             else question = randomShapeDrill(availableLetters);
 
             // Map the picked letter to the checked string that carries it

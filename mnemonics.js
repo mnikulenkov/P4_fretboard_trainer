@@ -85,6 +85,17 @@ function cycleNeighbour(letter, shapeIndex, direction) {
     return direction === 'right' ? (shapeIndex + 1) % 3 : (shapeIndex + 2) % 3;
 }
 
+// Frets the neighbour occupies on the fingerboard. Only the wrap to the right
+// stays on the neck (the first shape one octave up, frets 13+); the wrap to
+// the left falls off the nut (frets 0 and below - the open string is an
+// accidental), so it never exists.
+function neighbourFrets(letter, shapeIndex, direction) {
+    const neighbour = MNEMONIC_ROWS[letter][cycleNeighbour(letter, shapeIndex, direction)];
+    const shift = direction === 'right' && shapeIndex === 2 ? 12
+        : direction === 'left' && shapeIndex === 0 ? -12 : 0;
+    return neighbour.frets.map(fret => fret + shift);
+}
+
 // Local helpers (this file must stay free of app.js dependencies)
 function mnShuffle(list) {
     const out = list.slice();
@@ -168,20 +179,32 @@ function randomNoteDrill(availableLetters) {
     };
 }
 
-// 3) "Neighbour shape": options are fret patterns; left = toward the nut
-function randomNeighbourDrill(availableLetters) {
+// 3) "Neighbour shape": options are fret patterns; left = toward the nut.
+// Only neighbours that sit wholly on the fingerboard are asked for: the shape
+// left of the window's first would live at frets 0 and below, and the shape
+// right of the last (one octave up) only when the board renders it whole.
+function randomNeighbourDrill(availableLetters, visibleFrets) {
+    // The board always renders frets 1-12; NaN (cleared input) falls back too
+    if (!(visibleFrets >= 12)) visibleFrets = 12;
     const letter = mnPick(availableLetters);
-    const shapeIndex = Math.floor(Math.random() * 3);
-    const direction = Math.random() < 0.5 ? 'left' : 'right';
-    const neighbourIndex = cycleNeighbour(letter, shapeIndex, direction);
-    const correct = shapePattern(MNEMONIC_ROWS[letter][neighbourIndex]);
+    const askable = [];
+    for (let shapeIndex = 0; shapeIndex < 3; shapeIndex++) {
+        ['left', 'right'].forEach(direction => {
+            const frets = neighbourFrets(letter, shapeIndex, direction);
+            if (frets[0] >= 1 && frets[frets.length - 1] <= visibleFrets) {
+                askable.push({ shapeIndex: shapeIndex, direction: direction });
+            }
+        });
+    }
+    const picked = mnPick(askable);
+    const correct = shapePattern(MNEMONIC_ROWS[letter][cycleNeighbour(letter, picked.shapeIndex, picked.direction)]);
 
     const distractors = mnShuffle(MNEMONIC_PATTERNS.filter(pattern => pattern !== correct)).slice(0, 3);
     return {
         drill: 'neighbour',
         letter: letter,
-        shapeIndex: shapeIndex,
-        direction: direction,
+        shapeIndex: picked.shapeIndex,
+        direction: picked.direction,
         correct: correct,
         options: mnShuffle([correct].concat(distractors))
     };
@@ -199,6 +222,7 @@ if (typeof module !== 'undefined' && module.exports) {
         shapePattern: shapePattern,
         shapeTypeName: shapeTypeName,
         cycleNeighbour: cycleNeighbour,
+        neighbourFrets: neighbourFrets,
         randomShapeDrill: randomShapeDrill,
         randomNoteDrill: randomNoteDrill,
         randomNeighbourDrill: randomNeighbourDrill
