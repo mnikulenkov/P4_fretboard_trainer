@@ -573,16 +573,20 @@ function progCandidatePool(chord) {
     return pool;
 }
 
-// Realize a plan against a chord's slot budget (eighth notes — bars*8).
+// Realize a plan against a chord's slot budget (bars × slotsPerBar — 8 slots
+// per bar = straight eighths, the §9.3 divisions scale it).
 // plan: {segments: [{id, bars}], links: [bool...]} — links[i] gates the
 // boundary segments[i] -> segments[i+1]; bars null on the LAST segment means
 // "absorb the remainder" (null elsewhere is treated as 1 bar). Last-absorbs
 // clamp (§16.2): overflow truncates tail segments, a shrinking budget drops
-// them, a growing one feeds the last; kept segments are at least half a bar
-// (4 slots); unknown scale ids drop their segment. Returns
+// them, a growing one feeds the last; kept segments are at least half a bar;
+// unknown scale ids drop their segment. Returns
 // {segments: [{cand, bars, startSlot, slots}], links} or null when nothing
 // valid remains.
-function progRealizePlan(chord, plan, totalSlots) {
+function progRealizePlan(chord, plan, totalSlots, opts) {
+    opts = opts || {};
+    const spb = opts.slotsPerBar || 8;
+    const halfBar = Math.round(spb / 2);
     if (!plan || !plan.segments || !plan.segments.length) return null;
     const pool = progCandidatePool(chord);
     const wanted = plan.segments.filter(s => s && pool.hasOwnProperty(s.id));
@@ -596,10 +600,10 @@ function progRealizePlan(chord, plan, totalSlots) {
             slots = totalSlots - cursor; // absorb the remainder
         } else {
             const bars = seg.bars == null ? 1 : seg.bars; // null is last-only; 1 bar if it appears mid-plan
-            slots = Math.min(Math.max(4, Math.round(bars * 8)), totalSlots - cursor);
+            slots = Math.min(Math.max(halfBar, Math.round(bars * spb)), totalSlots - cursor);
         }
         if (slots <= 0) return; // budget exhausted — tail truncates
-        if (!isLast && seg.bars != null && slots < 4 && out.length) {
+        if (!isLast && seg.bars != null && slots < halfBar && out.length) {
             out[out.length - 1].slots += slots; // runt segment merges left
             return;
         }
@@ -1016,9 +1020,9 @@ function progLandingTone(fromTones, chord, target) {
     return best || { pc: rootPc, toPc: null, dist: null, value: 0 };
 }
 
-// A played phrase through the scale that EXACTLY spans an eighth-note budget
-// (§9.3) — the replacement for tiling a one-octave up-down cycle against the
-// chord span, which cropped the line mid-phrase at the barline and restarted
+// A played phrase through the scale that EXACTLY spans the chord's slot
+// budget (§9.3) — the replacement for tiling a one-octave up-down cycle against
+// the chord span, which cropped the line mid-phrase at the barline and restarted
 // every chord on its root. The shape is what a player actually drafts:
 //
 //   · enter near where the PREVIOUS phrase landed (opts.nearAbs, absolute
@@ -1032,6 +1036,13 @@ function progLandingTone(fromTones, chord, target) {
 //     out which notes are structural;
 //   · a one-eighth lead-in after the strum (S ≥ 6) so the comp speaks first.
 //
+// Divisions (§9.3): `opts.slotsPerBar` sets the grid — 8 slots/bar = straight
+// eighths (default), 12 = triplet eighths (3 per beat), 16 = sixteenths. The
+// duration ladder is grid-relative (structural = 2 slots, color = 1), so a
+// finer grid packs the same arch into denser motion: at 16 the structural
+// tones are eighths and color runs as sixteenths (double-time), at 12 the
+// pairs feel like 12/8. `slots` is always in grid units: bars × slotsPerBar.
+//
 // Deterministic and DOM-free. Returns
 // [{string, fret, pc, deg, abs, atSlot, dur, accent, role}] with role
 // 'open' | 'rise' | 'peak' | 'fall' | 'land': events are strictly ordered,
@@ -1040,6 +1051,7 @@ function progLandingTone(fromTones, chord, target) {
 function progPhrase(tones, slots, stringOpenPcs, opts) {
     opts = opts || {};
     const S = Math.max(1, Math.round(slots));
+    const spb = opts.slotsPerBar || 8; // grid: 8 = eighths, 12 = triplets, 16 = sixteenths
     if (!tones.length) return [];
     const pos = progScalePositions(tones, stringOpenPcs, {
         centerFret: opts.centerFret,
@@ -1068,10 +1080,13 @@ function progPhrase(tones, slots, stringOpenPcs, opts) {
         if ((stringOpenPcs[pos[i].string] + pos[i].fret) % 12 === endPc) { landIdx = i; break; }
     }
 
-    let leadIn = opts.leadIn == null ? (S >= 6 ? 1 : 0) : opts.leadIn;
+    // lead-in: one eighth of the current grid (2 slots at sixteenths), only
+    // once the span is past three quarters of a bar
+    const leadUnit = spb >= 16 ? 2 : 1;
+    let leadIn = opts.leadIn == null ? (S >= spb * 0.75 ? leadUnit : 0) : opts.leadIn;
     if (leadIn > S - 1) leadIn = Math.max(0, S - 1);
     const usable = S - leadIn;
-    const small = usable <= 6; // tiny budgets: everything moves as eighths
+    const small = usable <= spb * 0.75; // tiny budgets: everything moves by one slot
     const durOf = p => (small || stabOf(p) < 0.7) ? 1 : 2;
 
     // entry: the first-octave position closest to the previous phrase's
@@ -1597,7 +1612,8 @@ let plState = {
     color: 0.5,     // safety(0) <-> color(1) slider; 0.5 == the shipped weights
     ghosts: true,   // fretboard ghost pills for the next boundary's changes (§16.8)
     linkDyads: true, // play the strongest resolver pair at segment boundaries (§16.8)
-    swing: true     // off-beat eighths a third late — the jazz triplet feel (§9.3)
+    swing: true,    // off-beat eighths a third late — the jazz triplet feel (§9.3)
+    div: 'eighth'   // the line's grid: eighth | triplet | sixteenth (§9.3 divisions)
 };
 let plAnalysis = null;
 let plPulseTimers = [];
@@ -1629,7 +1645,7 @@ function plSave() {
             b: plState.bpm, bc: plState.bars, l: plState.loop, ci: plState.countIn,
             nr: plState.noResolve,
             p: plState.plan, fl: plState.flow, cw: plState.color,
-            gh: plState.ghosts, ld: plState.linkDyads, sw: plState.swing
+            gh: plState.ghosts, ld: plState.linkDyads, sw: plState.swing, dv: plState.div
         })), 365);
     } catch (e) { /* cookie budget exhausted — non-fatal */ }
 }
@@ -1652,6 +1668,7 @@ function plRestore() {
         if (saved && typeof saved.gh === 'boolean') plState.ghosts = saved.gh;
         if (saved && typeof saved.ld === 'boolean') plState.linkDyads = saved.ld;
         if (saved && typeof saved.sw === 'boolean') plState.swing = saved.sw;
+        if (saved && PL_DIVS[saved.dv]) plState.div = saved.dv;
     } catch (e) { /* corrupted cookie — defaults stand */ }
 }
 
@@ -1711,7 +1728,8 @@ function plRealizeAll() {
         const plan = plState.plan[i];
         if (!plan || !plan.segments || !plan.segments.length) return null;
         const links = plState.flow ? (plan.links || []) : plan.segments.map(() => false);
-        return progRealizePlan(chord, { segments: plan.segments, links: links }, plItemSlots(chord));
+        return progRealizePlan(chord, { segments: plan.segments, links: links }, plItemSlots(chord),
+            { slotsPerBar: plSlotsPerBar() });
     }) : null;
 }
 
@@ -2564,7 +2582,8 @@ function plStartAudition(chord, cand, mode) {
         ctx: ctx, master: chain.master, body: chain.body, voices: [], uiTimers: [],
         items: [item], chordIdx: 0,
         slotEighth: 0,
-        eighthSec: (60 / plState.bpm) / 2,
+        subdiv: plSubdiv(), slotsPerBar: plSlotsPerBar(),
+        slotSec: (60 / plState.bpm) / plSubdiv(),
         nextTime: ctx.currentTime + 0.12,
         audition: true // one pass, no loop, no count-in, no Play-button takeover
     };
@@ -2589,6 +2608,20 @@ let plTransport = null;
 // (2:1 at full push would be 0.5; 0.33 is a relaxed, in-the-pocket swing).
 const PL_SWING = 0.33;
 
+// The line's grid (§9.3 divisions): slots per BEAT per division — straight
+// eighths (default), triplet eighths (12/8 lilt, 3 per beat), sixteenths
+// (double-time runs). Bars × these × 4 = slots per bar.
+const PL_DIVS = { eighth: 2, triplet: 3, sixteenth: 4 };
+const PL_DIV_LABELS = { eighth: '8ths', triplet: 'triplets', sixteenth: '16ths' };
+
+function plSubdiv() {
+    return PL_DIVS[plState.div] || 2;
+}
+
+function plSlotsPerBar() {
+    return plSubdiv() * 4;
+}
+
 function plSetPick(chord, cand) {
     plState.pick[chord.index] = cand.id;
     plTransportUpdateItem(chord.index);
@@ -2599,10 +2632,17 @@ function plFreq(pos) {
     return freq ? freq * Math.pow(2, pos.fret / 12) : 0;
 }
 
-// A slot's actual start time: swing pushes the odd (off-beat) eighths late,
-// on-beat notes and strums stay on the grid.
+// A slot's actual start time: swing pushes the off-beat EIGHTHS late — any
+// slot that lands exactly on an odd eighth (integer position on the eighth
+// grid) — by a third of an eighth; on-beat notes and strums stay on the grid.
+// Triplet division carries its own lilt and never shifts; sixteenths swing
+// only their eighth-note skeleton, the 16ths inside stay straight.
 function plSlotWhen(t, slot, when) {
-    return plState.swing && slot % 2 === 1 ? when + t.eighthSec * PL_SWING : when;
+    if (!plState.swing) return when;
+    const eighthIdx = (slot * 2) / t.subdiv;
+    return Number.isInteger(eighthIdx) && eighthIdx % 2 === 1
+        ? when + t.slotSec * t.subdiv * PL_SWING / 2
+        : when;
 }
 
 // Fill every transport item with its phrases (§9.3). Chained by `nearAbs`:
@@ -2634,14 +2674,14 @@ function plBuildPhrases(items) {
                     endPc = progLandingTone(sg.cand.tones, item.chord, target).pc;
                 }
                 return finish(progPhrase(sg.cand.tones, sg.slots, plStringOpenPcs(),
-                    { endPc: endPc, nearAbs: near, leadIn: leadIn }));
+                    { endPc: endPc, nearAbs: near, leadIn: leadIn, slotsPerBar: plSlotsPerBar() }));
             });
         } else {
             item.segEvents = null;
             item.events = item.cand
                 ? finish(progPhrase(item.cand.tones, item.slots, plStringOpenPcs(), {
                     endPc: progLandingTone(item.cand.tones, item.chord, plExitTarget(item.idx)).pc,
-                    nearAbs: near, leadIn: leadIn
+                    nearAbs: near, leadIn: leadIn, slotsPerBar: plSlotsPerBar()
                 }))
                 : null;
         }
@@ -2698,11 +2738,12 @@ function plTransportVoice(t, freq, when, decay, peak) {
     });
 }
 
-// A chord's length in 8th-note slots: its explicit "*N" bars, else the
-// transport's global bars-per-chord setting (default 2).
+// A chord's length in grid slots: its explicit "*N" bars, else the
+// transport's global bars-per-chord setting (default 2), on the current
+// division's grid (8/12/16 slots per bar — §9.3).
 function plItemSlots(chord) {
     const bars = chord && chord.bars != null ? chord.bars : plState.bars;
-    return Math.max(1, Math.round(bars * 8));
+    return Math.max(1, Math.round(bars * plSlotsPerBar()));
 }
 
 function plTransportStart() {
@@ -2736,7 +2777,8 @@ function plTransportStart() {
         ctx: ctx, master: master, body: body, voices: [], uiTimers: [],
         items: items, chordIdx: Math.min(plState.chordIdx, items.length - 1),
         slotEighth: 0,
-        eighthSec: (60 / plState.bpm) / 2,
+        subdiv: plSubdiv(), slotsPerBar: plSlotsPerBar(),
+        slotSec: (60 / plState.bpm) / plSubdiv(),
         nextTime: ctx.currentTime + 0.15
     };
 
@@ -2831,7 +2873,7 @@ function plTransportTick() {
         }
         if (!t.items[t.chordIdx]) { plTransportStop(); return; }
         plTransportScheduleSlot(t, t.nextTime);
-        t.nextTime += t.eighthSec;
+        t.nextTime += t.slotSec;
         t.slotEighth++;
     }
 }
@@ -2864,7 +2906,7 @@ function plTransportScheduleSlot(t, when) {
 
     // strum at the chord's start and at each bar line (scale-only auditions
     // skip it); re-strums sit back a little so the downbeat speaks most
-    if (!item.noStrum && slot % 8 === 0) {
+    if (!item.noStrum && slot % t.slotsPerBar === 0) {
         const first = slot === 0;
         item.voicing.forEach((p, i) => {
             plTransportVoice(t, plFreq(p), when + i * 0.012, 2.2, first ? 0.20 : 0.15);
@@ -2900,8 +2942,9 @@ function plTransportScheduleSlot(t, when) {
                 t.uiTimers.push(setTimeout(() => plPulseCell(fromPos), delayMs));
             }
             if (toPos) {
-                plTransportVoice(t, plFreq(toPos), when + t.eighthSec * 0.5, 0.45, 0.36);
-                t.uiTimers.push(setTimeout(() => plPulseCell(toPos), delayMs + t.eighthSec * 500));
+                const grace = t.slotSec * t.subdiv / 4; // a quarter-beat grace
+                plTransportVoice(t, plFreq(toPos), when + grace, 0.45, 0.36);
+                t.uiTimers.push(setTimeout(() => plPulseCell(toPos), delayMs + grace * 1000));
             }
             playedLink = !!(fromPos || toPos);
         }
@@ -2909,9 +2952,11 @@ function plTransportScheduleSlot(t, when) {
     const ev = !playedLink && evs ? evs.find(e => e.atSlot === localSlot) : null;
     if (ev) {
         // a phrase note: rings to its notated length (a touch past it, so
-        // legato holds connect), dynamics from the phrase's accent contour
+        // legato holds connect), dynamics from the phrase's accent contour.
+        // The decay floor shrinks with the grid so dense divisions stay crisp.
         const noteWhen = plSlotWhen(t, slot, when);
-        const decay = Math.min(2.6, Math.max(0.30, ev.dur * t.eighthSec * 1.3));
+        const decay = Math.min(2.6, Math.max(Math.min(0.30, t.slotSec * 2.4),
+            ev.dur * t.slotSec * 1.3));
         plTransportVoice(t, plFreq(ev), noteWhen, decay, 0.36 * ev.accent);
         t.uiTimers.push(setTimeout(() => plPulseCell(ev, decay * 1000),
             Math.max(0, (noteWhen - t.ctx.currentTime) * 1000)));
@@ -2947,7 +2992,8 @@ function plStartPlanAudition(chord) {
         ctx: ctx, master: chain.master, body: chain.body, voices: [], uiTimers: [],
         items: [item], chordIdx: 0,
         slotEighth: 0,
-        eighthSec: (60 / plState.bpm) / 2,
+        subdiv: plSubdiv(), slotsPerBar: plSlotsPerBar(),
+        slotSec: (60 / plState.bpm) / plSubdiv(),
         nextTime: ctx.currentTime + 0.12,
         audition: true, // one pass, no loop, no Play-button takeover
         follow: true    // ...but the strip/neck DO follow the segments
@@ -3022,6 +3068,7 @@ function plWriteTransportInputs() {
     const ghosts = document.getElementById('pl-ghosts');
     const linkDyads = document.getElementById('pl-linkdyads');
     const swing = document.getElementById('pl-swing');
+    const div = document.getElementById('pl-div');
     if (bpm) bpm.value = plState.bpm;
     if (bars) bars.value = plState.bars;
     if (loop) loop.checked = plState.loop;
@@ -3031,6 +3078,7 @@ function plWriteTransportInputs() {
     if (ghosts) ghosts.checked = plState.ghosts;
     if (linkDyads) linkDyads.checked = plState.linkDyads;
     if (swing) swing.checked = plState.swing;
+    if (div) div.value = plState.div;
 }
 
 // BPM / bars / loop apply live while the loop runs; count-in affects the next
@@ -3039,13 +3087,42 @@ function plTransportSettingsChanged() {
     const wasBpm = plState.bpm, wasBars = plState.bars;
     plReadTransportInputs();
     if (plTransport) {
-        if (wasBpm !== plState.bpm) plTransport.eighthSec = (60 / plState.bpm) / 2;
+        if (wasBpm !== plState.bpm) plTransport.slotSec = (60 / plState.bpm) / plTransport.subdiv;
         if (wasBars !== plState.bars) {
             plTransport.items.forEach(item => {
                 if (item.chord.bars == null) item.slots = plItemSlots(item.chord);
             });
             plBuildPhrases(plTransport.items); // phrases must span the new spans
         }
+    }
+    plSave();
+}
+
+// Division change (8ths / triplets / 16ths, §9.3): the slot grid rescales, so
+// plans re-realize against the new slots-per-bar and a running transport is
+// re-timed in place (the current chord restarts from its top, like a jump).
+function plDivisionChanged() {
+    plState.div = document.getElementById('pl-div').value || 'eighth';
+    plRealizeAll();
+    plRenderPlan();
+    plRenderTension();
+    if (plTransport && !plTransport.audition) {
+        const t = plTransport;
+        t.subdiv = plSubdiv();
+        t.slotsPerBar = plSlotsPerBar();
+        t.slotSec = (60 / plState.bpm) / t.subdiv;
+        t.items.forEach((item, i) => {
+            item.slots = plItemSlots(item.chord);
+            const segs = plPlans ? plPlans[i] : null;
+            const usePlan = segs && segs.segments.length;
+            item.segs = usePlan ? segs : null;
+            item.linkNotes = usePlan ? progLinkNotes(item.chord, segs) : null;
+            item.cand = usePlan ? null
+                : progDefaultCandidate(plAnalysis.suggestions[i] || [], plState.pick[i]);
+        });
+        plBuildPhrases(t.items);
+        t.slotEighth = 0;
+        t.nextTime = Math.max(t.nextTime, t.ctx.currentTime + 0.05);
     }
     plSave();
 }
@@ -3316,8 +3393,13 @@ function initProgressionLab() {
         '<label class="pl-ctl">bars/chord <input id="pl-bars" class="hb-quiz-exempt" type="number" min="1" max="8" step="1" value="2"></label>' +
         '<label class="pl-ctl pl-check"><input id="pl-loop" type="checkbox" checked> loop</label>' +
         '<label class="pl-ctl pl-check"><input id="pl-countin" type="checkbox" class="hb-quiz-exempt"> count-in</label>' +
-        '<label class="pl-ctl pl-check" title="Off-beat eighth notes play a third late — the relaxed jazz triplet feel. Straight eighths when off">' +
+        '<label class="pl-ctl pl-check" title="Off-beat eighths play a third late — the relaxed jazz triplet feel. Straight eighths when off (triplet division carries its own lilt and never shifts)">' +
         '<input id="pl-swing" type="checkbox" class="hb-quiz-exempt" checked> swing</label>' +
+        '<label class="pl-ctl">feel <select id="pl-div" class="pl-select hb-quiz-exempt" title="The scale line’s grid: straight eighths (the default), triplet eighths (a 12/8 lilt) or sixteenths (double-time runs — structural tones still land as eighths). Durations always follow the stability atlas">' +
+        '<option value="eighth">8ths</option>' +
+        '<option value="triplet">triplets</option>' +
+        '<option value="sixteenth">16ths</option>' +
+        '</select></label>' +
         '<label class="pl-ctl pl-color" title="Left: prefer safety — avoid notes weigh more. Right: prefer color — resolution and flow weigh more. The middle is the default research weighting">' +
         'safety <input id="pl-color" class="hb-quiz-exempt" type="range" min="0" max="1" step="0.1" value="0.5"> color</label>' +
         '<label class="pl-ctl pl-check" title="On the fretboard: dashed ghost pills mark the tones the NEXT segment introduces (the pc-set diff at the boundary) — see the move before you make it">' +
@@ -3393,6 +3475,7 @@ function initProgressionLab() {
         plState.swing = document.getElementById('pl-swing').checked;
         plSave(); // read live per note — nothing to rebuild
     });
+    document.getElementById('pl-div').addEventListener('change', plDivisionChanged);
     // the per-segment ▾ menu closes on any tap outside itself
     document.addEventListener('pointerdown', e => {
         const menu = document.getElementById('pl-planmenu');

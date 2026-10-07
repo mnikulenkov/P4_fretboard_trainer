@@ -577,6 +577,22 @@ the boundary). The shape is what a player drafts:
    by it. Note decay = notated duration × tempo (clamped 0.3–2.6 s), so
    holdings actually hold at any BPM.
 
+**Divisions.** The grid itself is selectable ("feel" in the transport row,
+cookie `dv`): straight **eighths** (default, 8 slots/bar), **triplet eighths**
+(12 slots/bar — a 12/8 lilt) or **sixteenths** (16 slots/bar — double-time).
+`progPhrase` takes `opts.slotsPerBar` and its duration ladder is grid-relative
+(structural = 2 slots, color = 1), so a finer grid packs the same arch denser
+without any new rhythm rules: at 16ths the structural tones are eighths and
+color tones run as sixteenths (2 bars of D dorian: 9 events at 8ths, 15 at
+triplets, 19 at 16ths); the lead-in is one eighth *of the grid* (2 slots at
+16ths). `progRealizePlan` takes the same option (half-bar minimum scales).
+Swing stays an eighth-note affair by construction: any slot landing exactly on
+an odd eighth shifts a third of an eighth late — triplet division carries its
+own lilt and never shifts, sixteenths swing only their eighth-note skeleton.
+Note decays clamp to the grid (`min(0.3 s, 2.4 slots)`) so dense divisions
+stay crisp. A division change while the loop runs re-times items in place
+(plans re-realize, phrases rebuild, the current chord restarts from its top).
+
 **Transport changes.** Items carry `events` / per-segment `segEvents` (segment
 phrases are local to their slot window). A **swing** toggle (default on, cookie
 `sw`) delays off-beat eighths by a third of an eighth; strums stay on the grid.
@@ -594,7 +610,9 @@ their degree); a phrase-invariant battery over 7 tone-sets × 10 span sizes
 (coverage, integer grid, unimodality, pc-membership, determinism, default
 root landing); the hand-computed dorian anchor
 `0@1x2 2@3x1 3@4x2 5@6x1 7@7x2 5@9x1 3@10x2 2@12x1 0@13x3`; near-octave entry;
-landing-tone anchors including the avoid-note rejection.
+landing-tone anchors including the avoid-note rejection; division cases
+(spans/ladder/lead-in per grid, density ordering 16ths > triplets > 8ths,
+plan realization at 16 slots/bar with the scaled half-bar minimum).
 
 ---
 
@@ -893,4 +911,5 @@ links all on, arpeggios excluded:
 | 7 — UI | plan strip (proportional timeline, boundary drag, link toggles), segment-aware cards + flow meter, `flow`/weight controls, cookie `p`/`fl`/`cw` fields. **Done** — strip chips size by duration (`flex-grow` = slots) with 🔗/⛓ boundary buttons that toggle on tap and resize on drag (½-bar snap, `#pl-planmenu` for steppers/presets/remove, `[`/`]` keyboard nudge); cards gain the `in` (resIn) meter and segment→segment resolution lines; `flow` checkbox + safety↔color slider (0.5 middle == the shipped weights) reshape wR/wF/wP through `plWeights()`; chip badges `×N`; presets/hash resets clear plans. Basic per-segment transport scheduling and neck switching shipped here too (below) — the strip would lie if silent. |
 | 8 — transport | what-changes ghost pills (pc-set diff vs the next segment), "sound the link" dyads at internal boundaries. Per-segment scheduling, segment-highlight follow and neck pill switching already shipped with Phase 7. **Done** — `plGhostTones` diffs the pc-sets and `progGhostPositions` marks the appearing tones as dashed `.pl-ghost` pills one window around the current line (toggle *what changes*, cookie `gh`); `progLinkNotes` picks each boundary's strongest *moving* resolver and the transport plays it as a from→to dyad (half-eighth grace) in place of the new segment's first line note, pulsing both cells (toggle *sound link*, cookie `ld`) — over `Imaj7[ionian→lydian]` that is F→E, the 4 falling to 3. **Bugfix that fell out of the ghost tests:** `progScalePositions`' absolute scaffold was `pc + 24 − 5·s` over pitch *classes* — subtracting the fourths changes the pitch class itself, so every string but the highest has marked (and, through the transport, *played*) wrong notes since v2.0; the scaffold is now unwrapped cumulatively from the lowest string, and per-cell "sounds the degree it claims" checks pin it (`(openPc + fret) % 12` convention, 5632 checks green; the old tests only asserted self-consistency inside the broken coordinate space). |
 | 9 — polish | tension-curve sparkline across the progression, plan presets (blues ramp, Coltrane alternation), share-link plan encoding, handbook section, Android asset refresh. **Done** — the tension strip under the chord chips renders one bar per segment (width = duration, height/opacity = `progTensionOf`, click jumps, live highlight follows the transport); the plan strip's *✨ all chords* applies a strategy to every chord at once (the blues-ramp / Coltrane-alternation recipes are "ladder/contrast over a form preset"); share links carry plans as compact suffixes (`Imaj7*4[ionian*2;lydian;ionian~01]`, `progEncodeShare`/`progDecodeShare`, junk-tolerant, legacy links unchanged); the handbook gained a *Scale plans* section and the share bullet documents suffixes; Android `www/` refreshed and asset URLs bumped to `?v=2.1`. 5647 checks green. |
-| 10 — phrase playback | §9.3: replace the cropped/mechanical cycle tiling with span-exact phrases (entry chaining, atlas-weighted durations, resolver landings, accents), swing, ring-out endings, dyad landing coordination. **Done** — `progPhrase` + `progLandingTone` + multi-octave `progScalePositions` in the model layer (Node/browser-tested: 9437 checks green, incl. the dorian anchor and the avoid-note landing rejection); transport items carry phrases (per-segment, slot-local), off-beat swing at ×⅓ eighth (toggle, cookie `sw`), note decays scale with notated duration, natural ends fade instead of chopping, "sound the link" plays only the to-tone over the held landing; handbook *Playing it* bullet rewritten; Android `www/` refreshed (asset URLs unchanged). | |
+| 10 — phrase playback | §9.3: replace the cropped/mechanical cycle tiling with span-exact phrases (entry chaining, atlas-weighted durations, resolver landings, accents), swing, ring-out endings, dyad landing coordination. **Done** — `progPhrase` + `progLandingTone` + multi-octave `progScalePositions` in the model layer (Node/browser-tested: 9437 checks green, incl. the dorian anchor and the avoid-note landing rejection); transport items carry phrases (per-segment, slot-local), off-beat swing at ×⅓ eighth (toggle, cookie `sw`), note decays scale with notated duration, natural ends fade instead of chopping, "sound the link" plays only the to-tone over the held landing; handbook *Playing it* bullet rewritten; Android `www/` refreshed (asset URLs unchanged). |
+| 11 — divisions | §9.3: selectable grid — straight eighths / triplet eighths / sixteenths ("feel" select, cookie `dv`). **Done** — the grid is one number (`slotsPerBar`, default 8, unchanged defaults everywhere): phrase durations are grid-relative so density follows (2 bars of dorian: 9/15/19 events), the lead-in is one grid-eighth, plan realization scales its half-bar minimum, swing shifts exactly the odd-eighth slots (triplets never, 16ths only the eighth skeleton), decays clamp to the grid, and a change mid-loop re-times items in place. 9583 checks green. | |
