@@ -907,14 +907,18 @@ function progGenerateVoicing(chord, forms, stringOpenPcs, opts) {
     }));
 }
 
-// Ascending one-octave scale line (root ... octave, §9.2): the root starts
-// near `centerFret` on the neck's LOWER half and every next semitone takes the
+// Ascending scale line (root ... octave, §9.2): the root starts near
+// `centerFret` on the neck's LOWER half and every next semitone takes the
 // position that stays closest to the position center — on a P4 neck this locks
 // the line into one position, the shapes the sequence mode teaches.
 // `tones` is a candidate's tones array ({pc, deg, ...}). Assumes P4 spacing.
+// `opts.octaves` (default 1) extends the climb octave by octave for as long as
+// a position exists in frets [0, 13] — long chords get taller lines (§9.3).
+// Each returned position carries `abs` (absolute pitch) for phrase shaping.
 function progScalePositions(tones, stringOpenPcs, opts) {
     opts = opts || {};
     const center = opts.centerFret === undefined ? 6 : opts.centerFret;
+    const octaves = Math.max(1, opts.octaves || 1);
     const n = stringOpenPcs.length;
     // Absolute pitch numbers, octave-correct: string s sounds 5 semitones
     // above string s+1 (P4). The unwrap is CUMULATIVE from the lowest string —
@@ -937,12 +941,16 @@ function progScalePositions(tones, stringOpenPcs, opts) {
         });
     }
     const rootAbs = A[start.s] + start.fret;
-    const semis = tones.map(t => t.deg).sort((a, b) => a - b);
-    semis.push(12); // close the octave
+    const baseDegs = tones.map(t => t.deg).sort((a, b) => a - b);
+    const semis = baseDegs.map(d => d); // octave 1 in scale order
+    for (let o = 1; o < octaves; o++) baseDegs.forEach(d => semis.push(d + 12 * o));
+    semis.push(12 * octaves); // close the last octave
+    const baseCount = baseDegs.length + 1; // targets of octave 1 (skip = legacy)
 
     const out = [];
     let last = start;
-    semis.forEach(t => {
+    for (let i = 0; i < semis.length; i++) {
+        const t = semis[i];
         const target = rootAbs + t;
         let best = null;
         for (let s = 0; s < n; s++) {
@@ -954,11 +962,13 @@ function progScalePositions(tones, stringOpenPcs, opts) {
                 (s === last.s ? 0 : 0.5);
             if (!best || score < best.score) best = { s: s, fret: fret, score: score, deg: t };
         }
+        // octave-1 targets keep the legacy skip; the climb simply stops when
+        // the neck runs out (no gaps in what is returned)
         if (best) {
-            out.push({ string: best.s, fret: best.fret, deg: t, isRoot: t % 12 === 0 });
+            out.push({ string: best.s, fret: best.fret, deg: t, isRoot: t % 12 === 0, abs: target });
             last = best;
-        }
-    });
+        } else if (i >= baseCount) break;
+    }
     return out;
 }
 
@@ -968,6 +978,207 @@ function progScalePositions(tones, stringOpenPcs, opts) {
 function progScaleLine(tones, stringOpenPcs, opts) {
     const pos = progScalePositions(tones, stringOpenPcs, opts);
     return pos.concat(pos.slice(1, -1).reverse());
+}
+
+// The phrase's landing tone (§9.3): the scale tone a chord's phrase ENDS on —
+// the strongest resolver into whatever comes next (usually the next chord),
+// held so it rings across the boundary and the next strum "answers" it.
+// Avoid notes over the CURRENT chord are excluded first: a landing note is
+// sustained, so the classic semitone-above clash would ring (over G7→Cmaj7 the
+// raw kernel loves C — the 4th of G mixolydian, which becomes Cmaj7's root —
+// but held against G7 it is the textbook avoid note; E, the 13th that IS the
+// next 3rd, is the playable answer). Atlas lookups only, no derivation.
+// Returns {pc, toPc, dist, value}; toPc null when there is no target.
+function progLandingTone(fromTones, chord, target) {
+    const rootPc = fromTones.length ? fromTones[0].pc : 0;
+    if (!target || !target.tones || !target.tones.length || !chord || !chord.tones) {
+        return { pc: rootPc, toPc: null, dist: null, value: 0 };
+    }
+    const chordTones = {};
+    chord.tones.forEach(t => { chordTones[t.pc] = t; });
+    const avoid = {};
+    fromTones.forEach(ct => {
+        if (chordTones.hasOwnProperty(ct.pc)) return;
+        chord.tones.forEach(t => {
+            if ((ct.pc - t.pc + 12) % 12 === 1) avoid[ct.pc] = true;
+        });
+    });
+    let best = null;
+    progResolution(fromTones, chordTones, target).resolvers.forEach(r => {
+        if (avoid[r.pc]) return;
+        const stab = (fromTones.find(t => t.pc === r.pc) || {}).stability || 0;
+        // value first, then closeness of the move, then restfulness of the tone
+        const key = r.value * 100 - r.dist * 2 + stab;
+        if (!best || key > best.key) {
+            best = { pc: r.pc, toPc: r.toPc, dist: r.dist, value: r.value, key: key };
+        }
+    });
+    return best || { pc: rootPc, toPc: null, dist: null, value: 0 };
+}
+
+// A played phrase through the scale that EXACTLY spans an eighth-note budget
+// (§9.3) — the replacement for tiling a one-octave up-down cycle against the
+// chord span, which cropped the line mid-phrase at the barline and restarted
+// every chord on its root. The shape is what a player actually drafts:
+//
+//   · enter near where the PREVIOUS phrase landed (opts.nearAbs, absolute
+//     pitch) — lines connect across chords instead of root-jumping;
+//   · arch up while the budget allows (taller arches for longer chords — the
+//     positions climb octave by octave until the neck runs out);
+//   · walk back down to the landing tone (opts.endPc — progLandingTone's
+//     choice), which absorbs the leftover time and rings across the boundary;
+//   · durations from the stability atlas: restful tones (root/3rd/5th, ≥ .70)
+//     land as quarter notes, color tones move as eighths — the rhythm spells
+//     out which notes are structural;
+//   · a one-eighth lead-in after the strum (S ≥ 6) so the comp speaks first.
+//
+// Deterministic and DOM-free. Returns
+// [{string, fret, pc, deg, abs, atSlot, dur, accent, role}] with role
+// 'open' | 'rise' | 'peak' | 'fall' | 'land': events are strictly ordered,
+// atSlot/dur are integers ≥ 0/≥ 1, and they cover [leadIn, slots) with no
+// gaps or overlaps — the phrase always ends exactly at the boundary.
+function progPhrase(tones, slots, stringOpenPcs, opts) {
+    opts = opts || {};
+    const S = Math.max(1, Math.round(slots));
+    if (!tones.length) return [];
+    const pos = progScalePositions(tones, stringOpenPcs, {
+        centerFret: opts.centerFret,
+        octaves: opts.octaves || 3
+    });
+    if (!pos.length) return [];
+    if (pos.length === 1 || S <= 2) {
+        const p = pos[0];
+        return [Object.assign({}, p, {
+            pc: (stringOpenPcs[p.string] + p.fret) % 12,
+            atSlot: 0, dur: S, accent: 1, role: 'land'
+        })];
+    }
+
+    // stability by degree → duration shaping (≥ .70 as quarters)
+    const stabByDeg = {};
+    tones.forEach(t => {
+        stabByDeg[t.deg % 12] = t.stability == null ? 0.5 : t.stability;
+    });
+    const stabOf = p => stabByDeg.hasOwnProperty(p.deg % 12) ? stabByDeg[p.deg % 12] : 0.5;
+
+    const rootPc = tones[0].pc;
+    const endPc = opts.endPc == null ? rootPc : ((opts.endPc % 12) + 12) % 12;
+    let landIdx = 0;
+    for (let i = 0; i < pos.length; i++) {
+        if ((stringOpenPcs[pos[i].string] + pos[i].fret) % 12 === endPc) { landIdx = i; break; }
+    }
+
+    let leadIn = opts.leadIn == null ? (S >= 6 ? 1 : 0) : opts.leadIn;
+    if (leadIn > S - 1) leadIn = Math.max(0, S - 1);
+    const usable = S - leadIn;
+    const small = usable <= 6; // tiny budgets: everything moves as eighths
+    const durOf = p => (small || stabOf(p) < 0.7) ? 1 : 2;
+
+    // entry: the first-octave position closest to the previous phrase's
+    // landing pitch (default: the root — a phrase from the bottom)
+    let startIdx = 0;
+    if (opts.nearAbs != null && isFinite(opts.nearAbs)) {
+        const lim = Math.min(pos.length - 1, tones.length);
+        for (let i = 1; i <= lim; i++) {
+            if (Math.abs(pos[i].abs - opts.nearAbs) < Math.abs(pos[startIdx].abs - opts.nearAbs)) {
+                startIdx = i;
+            }
+        }
+    }
+
+    // the walk: contiguous rise startIdx → peak, contiguous fall peak → landIdx
+    const between = (a, b) => {
+        const out = [];
+        if (a === b) return out;
+        const step = b > a ? 1 : -1;
+        for (let i = a + step; i !== b; i += step) out.push(i);
+        return out;
+    };
+    const cost = idxs => idxs.reduce((s, i) => s + durOf(pos[i]), 0);
+    const rangeUp = (a, b) => {
+        const out = [];
+        for (let i = a; i <= b; i++) out.push(i);
+        return out;
+    };
+
+    const floor = Math.max(startIdx, landIdx); // a peak below the landing is no arch
+    let peak = floor;
+    for (let cand = floor + 1; cand < pos.length; cand++) {
+        if (cost(rangeUp(startIdx, cand)) + cost(between(cand, landIdx)) + 2 > usable) break;
+        peak = cand;
+    }
+    // even a budget too small for the walk deserves a small arch (the fit
+    // machinery below shrinks it back if truly needed)
+    if (peak < Math.min(2, pos.length - 1)) peak = Math.min(2, pos.length - 1);
+
+    let asc = rangeUp(startIdx, peak);
+    let desc = between(peak, landIdx);
+    let aDurs = asc.map(i => durOf(pos[i]));
+    let dDurs = desc.map(i => durOf(pos[i]));
+    let total = aDurs.concat(dDurs).reduce((a, b) => a + b, 0);
+    // fit: leave at least one slot for the landing — first stretch quarters
+    // (least stable first), then drop descent notes (leap in), then the peak
+    const reduceOne = () => {
+        const both = asc.concat(desc);
+        let worst = -1, worstStab = Infinity;
+        both.forEach((i, k) => {
+            const d = k < asc.length ? aDurs[k] : dDurs[k - asc.length];
+            const stab = stabOf(pos[i]);
+            if (d > 1 && stab < worstStab) { worstStab = stab; worst = k; }
+        });
+        if (worst < 0) return false;
+        if (worst < asc.length) aDurs[worst]--; else dDurs[worst - asc.length]--;
+        total--;
+        return true;
+    };
+    while (total + 1 > usable && reduceOne()) { /* stretched one quarter */ }
+    while (total + 1 > usable && desc.length) {
+        desc.pop(); dDurs.pop(); total--;
+    }
+    while (total + 1 > usable && asc.length > 1) {
+        asc.pop(); aDurs.pop(); total--;
+    }
+    if (total + 1 > usable) { // nothing left to trim: the landing alone
+        asc = []; desc = []; aDurs = []; dDurs = []; total = 0;
+    }
+
+    // emit
+    const out = [];
+    let at = leadIn;
+    const idxs = asc.concat(desc);
+    const durs = aDurs.concat(dDurs);
+    const mergeLand = !desc.length && asc.length && asc[asc.length - 1] === landIdx;
+    idxs.forEach((i, k) => {
+        const role = mergeLand && k === idxs.length - 1 ? 'land'
+            : (k === asc.length - 1 ? 'peak'
+                : (k === 0 ? 'open' : (k < asc.length ? 'rise' : 'fall')));
+        const p = pos[i];
+        out.push({
+            string: p.string, fret: p.fret, pc: (stringOpenPcs[p.string] + p.fret) % 12,
+            deg: p.deg, abs: p.abs, atSlot: at, dur: durs[k], accent: 1, role: role
+        });
+        at += durs[k];
+    });
+    const landDur = Math.max(1, usable - total);
+    if (!mergeLand) {
+        const p = pos[landIdx];
+        out.push({
+            string: p.string, fret: p.fret, pc: (stringOpenPcs[p.string] + p.fret) % 12,
+            deg: p.deg, abs: p.abs, atSlot: leadIn + total, dur: landDur, accent: 1, role: 'land'
+        });
+    } else {
+        out[out.length - 1].dur += landDur; // the walk's last note IS the landing
+    }
+
+    // dynamics: beat hierarchy, stability, and the phrase's two goal notes
+    out.forEach(ev => {
+        let a = 0.80 + 0.28 * (stabByDeg.hasOwnProperty(ev.deg % 12) ? stabByDeg[ev.deg % 12] : 0.5);
+        if (ev.atSlot % 2 !== 0) a *= 0.88;
+        if (ev.role === 'peak') a *= 1.08;
+        if (ev.role === 'land') a *= 1.05;
+        ev.accent = Math.min(1.2, Math.max(0.55, Math.round(a * 100) / 100));
+    });
+    return out;
 }
 
 // Which candidate the transport plays for a chord with no explicit pick: the
@@ -1385,7 +1596,8 @@ let plState = {
     flow: true,     // global master: are internal boundaries evaluated at all
     color: 0.5,     // safety(0) <-> color(1) slider; 0.5 == the shipped weights
     ghosts: true,   // fretboard ghost pills for the next boundary's changes (§16.8)
-    linkDyads: true // play the strongest resolver pair at segment boundaries (§16.8)
+    linkDyads: true, // play the strongest resolver pair at segment boundaries (§16.8)
+    swing: true     // off-beat eighths a third late — the jazz triplet feel (§9.3)
 };
 let plAnalysis = null;
 let plPulseTimers = [];
@@ -1417,7 +1629,7 @@ function plSave() {
             b: plState.bpm, bc: plState.bars, l: plState.loop, ci: plState.countIn,
             nr: plState.noResolve,
             p: plState.plan, fl: plState.flow, cw: plState.color,
-            gh: plState.ghosts, ld: plState.linkDyads
+            gh: plState.ghosts, ld: plState.linkDyads, sw: plState.swing
         })), 365);
     } catch (e) { /* cookie budget exhausted — non-fatal */ }
 }
@@ -1439,6 +1651,7 @@ function plRestore() {
         if (saved && typeof saved.cw === 'number') plState.color = Math.min(1, Math.max(0, saved.cw));
         if (saved && typeof saved.gh === 'boolean') plState.ghosts = saved.gh;
         if (saved && typeof saved.ld === 'boolean') plState.linkDyads = saved.ld;
+        if (saved && typeof saved.sw === 'boolean') plState.swing = saved.sw;
     } catch (e) { /* corrupted cookie — defaults stand */ }
 }
 
@@ -2324,10 +2537,10 @@ function plVoicingFor(chord) {
 }
 
 // One-shot audition of a single chord with the transport's EXACT timing:
-// eighth notes at the current BPM, up–down scale cycles, a strum at each bar
-// line, lasting the chord's slots (bars × 8 — explicit "*N" honored). The card
-// buttons ("chord + scale", "scale", "chord") use this so what you audition
-// is what "Play progression" will play. mode: 'both' | 'scale' | 'chord'.
+// the same phrase playback, strum at each bar line, lasting the chord's slots
+// (bars × 8 — explicit "*N" honored). The card buttons ("chord + scale",
+// "scale", "chord") use this so what you audition is what "Play progression"
+// will play. mode: 'both' | 'scale' | 'chord'.
 function plStartAudition(chord, cand, mode) {
     const ctx = typeof initAudioContext === 'function' ? initAudioContext() : null;
     if (!ctx) return;
@@ -2342,9 +2555,9 @@ function plStartAudition(chord, cand, mode) {
         chord: chord,
         cand: withScale ? cand : null,
         voicing: plVoicingFor(chord),
-        line: withScale ? progScaleLine(cand.tones, plStringOpenPcs()) : [],
         slots: plItemSlots(chord),
         noStrum: mode === 'scale',
+        leadIn: mode === 'scale' ? 0 : undefined, // no strum to speak first
         idx: chord.index
     };
     plTransport = {
@@ -2355,19 +2568,26 @@ function plStartAudition(chord, cand, mode) {
         nextTime: ctx.currentTime + 0.12,
         audition: true // one pass, no loop, no count-in, no Play-button takeover
     };
+    plBuildPhrases(plTransport.items);
     plTransport.timer = setInterval(plTransportTick, 25);
 }
 
-// --- transport (§9.2) ------------------------------------------------------------
+// --- transport (§9.2, §9.3) ------------------------------------------------------
 //
 // A lookahead conductor on the AudioContext clock: one shared effects chain
 // for the whole loop (the sound.js lesson — per-note full chains overload the
 // audio thread), light two-voice notes scheduled ~180 ms ahead by a 25 ms
-// timer. Chords re-strum each bar; the selected scale runs as eighth notes in
-// up–down cycles across the chord's span. UI changes (chip highlight, neck
-// pulse) are wall-clock timeouts aimed at the same scheduled times.
+// timer. Chords re-strum each bar; the selected scale plays as a PHRASE (§9.3)
+// that spans the chord exactly — entry connected to the previous chord's
+// landing, stability-weighted durations, a held landing tone that rings across
+// the barline. UI changes (chip highlight, neck pulse) are wall-clock timeouts
+// aimed at the same scheduled times.
 
 let plTransport = null;
+
+// Off-beat eighths delayed by a third of an eighth — the light triplet feel
+// (2:1 at full push would be 0.5; 0.33 is a relaxed, in-the-pocket swing).
+const PL_SWING = 0.33;
 
 function plSetPick(chord, cand) {
     plState.pick[chord.index] = cand.id;
@@ -2377,6 +2597,55 @@ function plSetPick(chord, cand) {
 function plFreq(pos) {
     const freq = getOpenStringFreqs()[pos.string];
     return freq ? freq * Math.pow(2, pos.fret / 12) : 0;
+}
+
+// A slot's actual start time: swing pushes the odd (off-beat) eighths late,
+// on-beat notes and strums stay on the grid.
+function plSlotWhen(t, slot, when) {
+    return plState.swing && slot % 2 === 1 ? when + t.eighthSec * PL_SWING : when;
+}
+
+// Fill every transport item with its phrases (§9.3). Chained by `nearAbs`:
+// each phrase enters near where the previous one landed, so the line connects
+// across chord boundaries instead of jumping to each new root. A segment's
+// landing is the "sound the link" dyad's from-tone when dyads are on (the
+// scheduler then plays only the to-tone — the from is already ringing); else
+// progLandingTone's strongest non-avoid resolver into the next segment /
+// next chord. Re-run wholesale on pick/plan/bars changes — cheap and always
+// consistent with the current state.
+function plBuildPhrases(items) {
+    let near = null;
+    items.forEach(item => {
+        const leadIn = item.leadIn;
+        const finish = evs => {
+            near = evs && evs.length ? evs[evs.length - 1].abs : near;
+            return evs;
+        };
+        if (item.segs && item.segs.segments.length) {
+            item.events = null;
+            item.segEvents = item.segs.segments.map((sg, k) => {
+                let endPc = null;
+                const ln = item.linkNotes && item.linkNotes[k + 1];
+                if (plState.linkDyads && ln) endPc = ln.pc;
+                if (endPc == null) {
+                    const target = k + 1 < item.segs.segments.length
+                        ? item.segs.segments[k + 1].cand
+                        : plExitTarget(item.idx);
+                    endPc = progLandingTone(sg.cand.tones, item.chord, target).pc;
+                }
+                return finish(progPhrase(sg.cand.tones, sg.slots, plStringOpenPcs(),
+                    { endPc: endPc, nearAbs: near, leadIn: leadIn }));
+            });
+        } else {
+            item.segEvents = null;
+            item.events = item.cand
+                ? finish(progPhrase(item.cand.tones, item.slots, plStringOpenPcs(), {
+                    endPc: progLandingTone(item.cand.tones, item.chord, plExitTarget(item.idx)).pc,
+                    nearAbs: near, leadIn: leadIn
+                }))
+                : null;
+        }
+    });
 }
 
 // One light note on the transport's shared chain (two voices, like
@@ -2455,14 +2724,13 @@ function plTransportStart() {
             chord: chord,
             cand: cand,
             segs: usePlan ? segs : null,
-            segLines: usePlan ? segs.segments.map(sg => progScaleLine(sg.cand.tones, plStringOpenPcs())) : null,
             linkNotes: usePlan ? progLinkNotes(chord, segs) : null,
             voicing: plVoicingFor(chord),
-            line: cand ? progScaleLine(cand.tones, plStringOpenPcs()) : [],
             slots: plItemSlots(chord),
             idx: i
         };
     });
+    plBuildPhrases(items);
 
     plTransport = {
         ctx: ctx, master: master, body: body, voices: [], uiTimers: [],
@@ -2484,16 +2752,29 @@ function plTransportStart() {
     plTransportPlayButton(true);
 }
 
-function plTransportStop() {
+// `soft`: the transport reached its natural end (single pass done, loop off) —
+// let the final strum and the last landing note ring out with a slow fade
+// instead of chopping every voice dead at the barline (the cropped-loop sound
+// v2.0 had). A user stop cuts quickly but still ramps 80 ms to stay click-free.
+function plTransportStop(soft) {
     if (!plTransport) return;
     const t = plTransport;
     plTransport = null;
     if (t.timer) clearInterval(t.timer);
     t.uiTimers.forEach(clearTimeout);
+    const now = t.ctx.currentTime;
+    const fade = soft ? 1.4 : 0.08;
+    try {
+        t.master.gain.cancelScheduledValues(now);
+        t.master.gain.setValueAtTime(Math.max(0.0001, t.master.gain.value), now);
+        t.master.gain.exponentialRampToValueAtTime(0.0001, now + fade);
+    } catch (e) { /* gain automation refused — fall through to hard stop */ }
     t.voices.forEach(v => {
-        try { v.stop(); } catch (e) { /* already stopped */ }
+        try { v.stop(now + fade + 0.05); } catch (e) { /* already stopped */ }
     });
-    try { t.master.disconnect(); } catch (e) { /* already disconnected */ }
+    setTimeout(() => {
+        try { t.master.disconnect(); } catch (e) { /* already disconnected */ }
+    }, (fade + 0.2) * 1000);
     plStopPulse();
     plTransportPlayButton(false);
     plRenderChips();
@@ -2515,7 +2796,9 @@ function plTransportJump(idx) {
     plTransport.nextTime = Math.max(plTransport.nextTime, plTransport.ctx.currentTime + 0.05);
 }
 
-// Live pick/plan changes while the loop runs.
+// Live pick/plan changes while the loop runs: refresh the item, then rebuild
+// every phrase (entries chain through the previous landing, so one change
+// reshapes its neighbors too).
 function plTransportUpdateItem(idx) {
     if (!plTransport || plTransport.audition) return;
     const item = plTransport.items[idx];
@@ -2523,15 +2806,10 @@ function plTransportUpdateItem(idx) {
     const segs = plPlans ? plPlans[idx] : null;
     const usePlan = segs && segs.segments.length;
     item.segs = usePlan ? segs : null;
-    item.segLines = usePlan ? segs.segments.map(sg => progScaleLine(sg.cand.tones, plStringOpenPcs())) : null;
     item.linkNotes = usePlan ? progLinkNotes(item.chord, segs) : null;
-    if (!usePlan) {
-        item.cand = progDefaultCandidate(plAnalysis.suggestions[idx] || [], plState.pick[idx]);
-        item.line = item.cand ? progScaleLine(item.cand.tones, plStringOpenPcs()) : [];
-    } else {
-        item.cand = null;
-        item.line = [];
-    }
+    item.cand = usePlan ? null
+        : progDefaultCandidate(plAnalysis.suggestions[idx] || [], plState.pick[idx]);
+    plBuildPhrases(plTransport.items);
 }
 
 function plTransportTick() {
@@ -2545,7 +2823,7 @@ function plTransportTick() {
             t.chordIdx++;
             if (t.chordIdx >= t.items.length) {
                 if (t.audition || !plState.loop) {
-                    plTransportStop(); // one-shot auditions end after a single pass
+                    plTransportStop(true); // natural end: ring out, don't chop
                     return;
                 }
                 t.chordIdx = 0;
@@ -2568,12 +2846,14 @@ function plSegAt(item, slot) {
     return found;
 }
 
-// Neck pulse for one position (shared by the line notes and link dyads).
-function plPulseCell(pos) {
+// Neck pulse for one position (shared by the line notes and link dyads);
+// `ms` tracks the note's sounding length so held notes pulse longer.
+function plPulseCell(pos, ms) {
     const el = plFretCell(pos.string, pos.fret);
     if (el) {
         el.classList.add('playing');
-        setTimeout(() => el.classList.remove('playing'), 300);
+        setTimeout(() => el.classList.remove('playing'),
+            Math.min(700, Math.max(300, ms || 300)));
     }
 }
 
@@ -2582,10 +2862,12 @@ function plTransportScheduleSlot(t, when) {
     const slot = t.slotEighth;
     const delayMs = Math.max(0, (when - t.ctx.currentTime) * 1000);
 
-    // strum at the chord's start and at each bar line (scale-only auditions skip it)
+    // strum at the chord's start and at each bar line (scale-only auditions
+    // skip it); re-strums sit back a little so the downbeat speaks most
     if (!item.noStrum && slot % 8 === 0) {
+        const first = slot === 0;
         item.voicing.forEach((p, i) => {
-            plTransportVoice(t, plFreq(p), when + i * 0.012, 2.2, 0.20);
+            plTransportVoice(t, plFreq(p), when + i * 0.012, 2.2, first ? 0.20 : 0.15);
         });
         t.uiTimers.push(setTimeout(() => {
             plTransportChordChange(item);
@@ -2593,19 +2875,27 @@ function plTransportScheduleSlot(t, when) {
     }
 
     const cur = plSegAt(item, slot);
-    const line = cur ? (item.segLines ? item.segLines[cur.index] : []) : item.line;
+    // segment phrases are local to their segment (atSlot 0..slots) — the
+    // chord's slot grid is offset by the segment's startSlot
+    const evs = cur ? (item.segEvents ? item.segEvents[cur.index] : null) : item.events;
+    const localSlot = cur ? slot - cur.seg.startSlot : slot;
     let playedLink = false;
     if (cur && cur.seg.startSlot === slot) {
         // segment boundary: the neck switches to the new scale's pills (§16.8)
         t.uiTimers.push(setTimeout(() => plTransportSegChange(item, cur.index), delayMs));
-        // "sound the link": play the boundary's strongest moving resolver
-        // (from-tone into to-tone) instead of the new segment's first eighth
+        // "sound the link": the boundary's strongest moving resolver. The
+        // previous phrase landed ON the from-tone when dyads are on (built
+        // that way in plBuildPhrases), so only the to-tone is struck — the
+        // held landing note becomes the dyad's first half.
         if (plState.linkDyads && cur.index > 0 && item.linkNotes && item.linkNotes[cur.index]) {
             const r = item.linkNotes[cur.index];
-            const prevLine = item.segLines ? item.segLines[cur.index - 1] : null;
-            const fromPos = prevLine && prevLine.length ? progPositionNearPc(r.pc, prevLine, plStringOpenPcs()) : null;
-            const toPos = line && line.length ? progPositionNearPc(r.toPc, line, plStringOpenPcs()) : null;
-            if (fromPos) {
+            const prevEvs = item.segEvents ? item.segEvents[cur.index - 1] : null;
+            const landed = prevEvs && prevEvs.length ? prevEvs[prevEvs.length - 1] : null;
+            const alreadyRinging = !!(landed && landed.pc === r.pc);
+            const fromPos = landed && alreadyRinging ? landed
+                : (prevEvs && prevEvs.length ? progPositionNearPc(r.pc, prevEvs, plStringOpenPcs()) : null);
+            const toPos = evs && evs.length ? progPositionNearPc(r.toPc, evs, plStringOpenPcs()) : null;
+            if (fromPos && !alreadyRinging) {
                 plTransportVoice(t, plFreq(fromPos), when, 0.35, 0.32);
                 t.uiTimers.push(setTimeout(() => plPulseCell(fromPos), delayMs));
             }
@@ -2616,10 +2906,15 @@ function plTransportScheduleSlot(t, when) {
             playedLink = !!(fromPos || toPos);
         }
     }
-    if (!playedLink && line && line.length) {
-        const note = line[slot % line.length];
-        plTransportVoice(t, plFreq(note), when, 0.5, 0.40);
-        t.uiTimers.push(setTimeout(() => plPulseCell(note), delayMs));
+    const ev = !playedLink && evs ? evs.find(e => e.atSlot === localSlot) : null;
+    if (ev) {
+        // a phrase note: rings to its notated length (a touch past it, so
+        // legato holds connect), dynamics from the phrase's accent contour
+        const noteWhen = plSlotWhen(t, slot, when);
+        const decay = Math.min(2.6, Math.max(0.30, ev.dur * t.eighthSec * 1.3));
+        plTransportVoice(t, plFreq(ev), noteWhen, decay, 0.36 * ev.accent);
+        t.uiTimers.push(setTimeout(() => plPulseCell(ev, decay * 1000),
+            Math.max(0, (noteWhen - t.ctx.currentTime) * 1000)));
     }
 }
 
@@ -2643,10 +2938,8 @@ function plStartPlanAudition(chord) {
         chord: chord,
         cand: cand,
         segs: usePlan ? segs : null,
-        segLines: usePlan ? segs.segments.map(sg => progScaleLine(sg.cand.tones, plStringOpenPcs())) : null,
         linkNotes: usePlan ? progLinkNotes(chord, segs) : null,
         voicing: plVoicingFor(chord),
-        line: cand ? progScaleLine(cand.tones, plStringOpenPcs()) : [],
         slots: plItemSlots(chord),
         idx: chord.index
     };
@@ -2659,6 +2952,7 @@ function plStartPlanAudition(chord) {
         audition: true, // one pass, no loop, no Play-button takeover
         follow: true    // ...but the strip/neck DO follow the segments
     };
+    plBuildPhrases(plTransport.items);
     plTransport.timer = setInterval(plTransportTick, 25);
 }
 
@@ -2727,6 +3021,7 @@ function plWriteTransportInputs() {
     const color = document.getElementById('pl-color');
     const ghosts = document.getElementById('pl-ghosts');
     const linkDyads = document.getElementById('pl-linkdyads');
+    const swing = document.getElementById('pl-swing');
     if (bpm) bpm.value = plState.bpm;
     if (bars) bars.value = plState.bars;
     if (loop) loop.checked = plState.loop;
@@ -2735,6 +3030,7 @@ function plWriteTransportInputs() {
     if (color) color.value = plState.color;
     if (ghosts) ghosts.checked = plState.ghosts;
     if (linkDyads) linkDyads.checked = plState.linkDyads;
+    if (swing) swing.checked = plState.swing;
 }
 
 // BPM / bars / loop apply live while the loop runs; count-in affects the next
@@ -2748,6 +3044,7 @@ function plTransportSettingsChanged() {
             plTransport.items.forEach(item => {
                 if (item.chord.bars == null) item.slots = plItemSlots(item.chord);
             });
+            plBuildPhrases(plTransport.items); // phrases must span the new spans
         }
     }
     plSave();
@@ -3019,6 +3316,8 @@ function initProgressionLab() {
         '<label class="pl-ctl">bars/chord <input id="pl-bars" class="hb-quiz-exempt" type="number" min="1" max="8" step="1" value="2"></label>' +
         '<label class="pl-ctl pl-check"><input id="pl-loop" type="checkbox" checked> loop</label>' +
         '<label class="pl-ctl pl-check"><input id="pl-countin" type="checkbox" class="hb-quiz-exempt"> count-in</label>' +
+        '<label class="pl-ctl pl-check" title="Off-beat eighth notes play a third late — the relaxed jazz triplet feel. Straight eighths when off">' +
+        '<input id="pl-swing" type="checkbox" class="hb-quiz-exempt" checked> swing</label>' +
         '<label class="pl-ctl pl-color" title="Left: prefer safety — avoid notes weigh more. Right: prefer color — resolution and flow weigh more. The middle is the default research weighting">' +
         'safety <input id="pl-color" class="hb-quiz-exempt" type="range" min="0" max="1" step="0.1" value="0.5"> color</label>' +
         '<label class="pl-ctl pl-check" title="On the fretboard: dashed ghost pills mark the tones the NEXT segment introduces (the pc-set diff at the boundary) — see the move before you make it">' +
@@ -3086,7 +3385,13 @@ function initProgressionLab() {
     });
     document.getElementById('pl-linkdyads').addEventListener('change', () => {
         plState.linkDyads = document.getElementById('pl-linkdyads').checked;
-        plSave(); // read live per boundary — nothing to rebuild
+        // segment landings are chosen to meet the dyad's from-tone — rebuild
+        if (plTransport && !plTransport.audition) plBuildPhrases(plTransport.items);
+        plSave();
+    });
+    document.getElementById('pl-swing').addEventListener('change', () => {
+        plState.swing = document.getElementById('pl-swing').checked;
+        plSave(); // read live per note — nothing to rebuild
     });
     // the per-segment ▾ menu closes on any tap outside itself
     document.addEventListener('pointerdown', e => {
@@ -3233,6 +3538,8 @@ if (typeof module !== 'undefined' && module.exports) {
         generateVoicing: progGenerateVoicing,
         scalePositions: progScalePositions,
         scaleLine: progScaleLine,
+        landingTone: progLandingTone,
+        phrase: progPhrase,
         defaultCandidate: progDefaultCandidate,
         initProgressionLab: initProgressionLab,
         toggleProgressionLab: toggleProgressionLab,

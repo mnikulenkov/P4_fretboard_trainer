@@ -519,8 +519,8 @@ A small `Transport` in the DOM layer: `start/stop`, lookahead scheduling via a
 
 - **BPM** input (default 120), **bars per chord** (default 2), **loop** toggle,
   optional count-in click.
-- Per chord: strum the voicing (`playChord`), re-strum each bar; play the selected
-  scale as even eighth notes ascending then descending across the chord's span.
+- Per chord: strum the voicing (`playChord`), re-strum each bar; the selected
+  scale plays as a **phrase** that spans the chord exactly (§9.3).
   The card audition buttons ("chord + scale" / "scale" / "chord") run the SAME
   conductor as a one-shot single-chord pass — identical sound, speed and bar count
   as "Play progression" (a `plStartAudition` transport item with `audition: true`;
@@ -531,6 +531,70 @@ A small `Transport` in the DOM layer: `start/stop`, lookahead scheduling via a
   root pills).
 - Transport selection follows playback; manual chip click during playback jumps the
   loop to that chord.
+
+### 9.3 Phrase playback
+
+The v2.0 transport tiled a one-octave up–down cycle against the chord span
+(`line[slot % line.length]`): whenever the span wasn't an exact multiple of the
+cycle the phrase was chopped mid-descent at the barline, every chord restarted
+the line on its root, and all eighths were identical (fixed 0.5 s decay, fixed
+velocity, straight grid, no rests) — cropped and mechanical. The rework replaces the
+tiling with a **phrase generator** in the model layer.
+
+**`progPhrase(tones, slots, stringOpenPcs, opts)`** returns events
+`{string, fret, pc, deg, abs, atSlot, dur, accent, role}` that cover the span's
+eighth-note grid exactly (integer slots, no gaps or overlaps, ends precisely at
+the boundary). The shape is what a player drafts:
+
+1. **Entry** (`opts.nearAbs`): the phrase starts at the first-octave position
+   closest to where the *previous* phrase landed — lines connect across chords
+   (a loop wraps: the last chord's landing seeds the first) instead of
+   root-jumping. Default: from the root.
+2. **Arch**: the line climbs while the budget allows (multi-octave —
+   `progScalePositions` gained an `octaves` option that extends the climb until
+   the neck runs out; a 4-bar chord sweeps up to ~1.5–2 octaves, a 1-bar chord
+   makes a small arch), then walks back down. The contour is unimodal by
+   construction.
+3. **Durations from the atlas** (the rhythm explains the harmony): restful
+   tones (stability ≥ 0.70 — root, 3rd, 5th) land as quarter notes, color
+   tones move as eighths; budgets ≤ 6 slots go all-eighth. Overflow is fixed
+   by stretching quarters (least stable first), then dropping descent notes,
+   then lowering the peak.
+4. **Landing** (`opts.endPc`): the final tone absorbs the leftover time and
+   rings across the barline. The tone is chosen by **`progLandingTone(from,
+   chord, target)`** — the §7.2 kernel's strongest resolver into the next
+   chord/segment, **excluding avoid notes over the current chord** (a landing
+   is held, so the semitone-above clash would ring; over G7→Cmaj7 the raw
+   kernel picks C — the 4th that becomes the next root — but E, the 13th that
+   *is* the next 3rd, is the playable answer). Over `IIm7 V7 Imaj7` the
+   landings are G (Dm7's 4th held into G7 where it becomes the root) and E
+   (G7's 13th held into Cmaj7's 3rd) — textbook guide-tone voice-leading,
+   derived, not hand-coded.
+5. **Lead-in**: spans ≥ 6 slots start one eighth after the strum, so the comp
+   speaks first and the line enters on the and-of-one.
+6. **Dynamics**: per-event `accent` (0.55–1.2) = stability + beat hierarchy
+   (on-beats louder) + role bumps (peak, landing); the transport scales gain
+   by it. Note decay = notated duration × tempo (clamped 0.3–2.6 s), so
+   holdings actually hold at any BPM.
+
+**Transport changes.** Items carry `events` / per-segment `segEvents` (segment
+phrases are local to their slot window). A **swing** toggle (default on, cookie
+`sw`) delays off-beat eighths by a third of an eighth; strums stay on the grid.
+Re-strums after the downbeat sit slightly softer. The **natural end** of a
+one-shot or non-looping pass now fades out over 1.4 s instead of hard-stopping
+every voice at the barline (user stops cut in 80 ms — still click-free).
+**"Sound the link" coordination**: with dyads on, the previous segment's phrase
+is *built* to land on the dyad's from-tone, so the boundary plays only the
+to-tone — the held landing note becomes the dyad's first half. `plBuildPhrases`
+rebuilds all phrases on pick/plan/bars/dyad changes (entries chain, so one
+change reshapes neighbors).
+
+Tests (§13): multi-octave position extension (ascending, no gaps, cells sound
+their degree); a phrase-invariant battery over 7 tone-sets × 10 span sizes
+(coverage, integer grid, unimodality, pc-membership, determinism, default
+root landing); the hand-computed dorian anchor
+`0@1x2 2@3x1 3@4x2 5@6x1 7@7x2 5@9x1 3@10x2 2@12x1 0@13x3`; near-octave entry;
+landing-tone anchors including the avoid-note rejection.
 
 ---
 
@@ -829,3 +893,4 @@ links all on, arpeggios excluded:
 | 7 — UI | plan strip (proportional timeline, boundary drag, link toggles), segment-aware cards + flow meter, `flow`/weight controls, cookie `p`/`fl`/`cw` fields. **Done** — strip chips size by duration (`flex-grow` = slots) with 🔗/⛓ boundary buttons that toggle on tap and resize on drag (½-bar snap, `#pl-planmenu` for steppers/presets/remove, `[`/`]` keyboard nudge); cards gain the `in` (resIn) meter and segment→segment resolution lines; `flow` checkbox + safety↔color slider (0.5 middle == the shipped weights) reshape wR/wF/wP through `plWeights()`; chip badges `×N`; presets/hash resets clear plans. Basic per-segment transport scheduling and neck switching shipped here too (below) — the strip would lie if silent. |
 | 8 — transport | what-changes ghost pills (pc-set diff vs the next segment), "sound the link" dyads at internal boundaries. Per-segment scheduling, segment-highlight follow and neck pill switching already shipped with Phase 7. **Done** — `plGhostTones` diffs the pc-sets and `progGhostPositions` marks the appearing tones as dashed `.pl-ghost` pills one window around the current line (toggle *what changes*, cookie `gh`); `progLinkNotes` picks each boundary's strongest *moving* resolver and the transport plays it as a from→to dyad (half-eighth grace) in place of the new segment's first line note, pulsing both cells (toggle *sound link*, cookie `ld`) — over `Imaj7[ionian→lydian]` that is F→E, the 4 falling to 3. **Bugfix that fell out of the ghost tests:** `progScalePositions`' absolute scaffold was `pc + 24 − 5·s` over pitch *classes* — subtracting the fourths changes the pitch class itself, so every string but the highest has marked (and, through the transport, *played*) wrong notes since v2.0; the scaffold is now unwrapped cumulatively from the lowest string, and per-cell "sounds the degree it claims" checks pin it (`(openPc + fret) % 12` convention, 5632 checks green; the old tests only asserted self-consistency inside the broken coordinate space). |
 | 9 — polish | tension-curve sparkline across the progression, plan presets (blues ramp, Coltrane alternation), share-link plan encoding, handbook section, Android asset refresh. **Done** — the tension strip under the chord chips renders one bar per segment (width = duration, height/opacity = `progTensionOf`, click jumps, live highlight follows the transport); the plan strip's *✨ all chords* applies a strategy to every chord at once (the blues-ramp / Coltrane-alternation recipes are "ladder/contrast over a form preset"); share links carry plans as compact suffixes (`Imaj7*4[ionian*2;lydian;ionian~01]`, `progEncodeShare`/`progDecodeShare`, junk-tolerant, legacy links unchanged); the handbook gained a *Scale plans* section and the share bullet documents suffixes; Android `www/` refreshed and asset URLs bumped to `?v=2.1`. 5647 checks green. |
+| 10 — phrase playback | §9.3: replace the cropped/mechanical cycle tiling with span-exact phrases (entry chaining, atlas-weighted durations, resolver landings, accents), swing, ring-out endings, dyad landing coordination. **Done** — `progPhrase` + `progLandingTone` + multi-octave `progScalePositions` in the model layer (Node/browser-tested: 9437 checks green, incl. the dorian anchor and the avoid-note landing rejection); transport items carry phrases (per-segment, slot-local), off-beat swing at ×⅓ eighth (toggle, cookie `sw`), note decays scale with notated duration, natural ends fade instead of chopping, "sound the link" plays only the to-tone over the held landing; handbook *Playing it* bullet rewritten; Android `www/` refreshed (asset URLs unchanged). | |

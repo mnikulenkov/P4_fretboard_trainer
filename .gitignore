@@ -12,6 +12,7 @@ charts_P4_Guitar.pdf
 
 # Headless-verification harness pages generated during development
 .harness_*.html
+__pycache__/
 
 # Logs and editor/OS droppings
 *.log
