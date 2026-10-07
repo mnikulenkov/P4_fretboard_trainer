@@ -2,4 +2,6 @@
 <resources>
     <string name="app_name">P4 Fretboard Trainer</string>
     <string name="no_browser">No browser installed</string>
+    <string name="no_share_target">Nothing installed to share with</string>
+    <string name="no_lab_link">No Progression Lab link found in the shared text</string>
 </resources>

@@ -17,6 +17,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:screenOrientation="landscape"
             android:resizeableActivity="false"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|density|uiMode"
@@ -24,6 +25,24 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Progression Lab deep link: p4fretboard://lab?p=<share payload>.
+                 A custom scheme works fully offline and needs no domain
+                 verification (App Links can't work for a github.io project
+                 page: /.well-known/assetlinks.json would have to live at the
+                 shared domain root, which we don't control). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="p4fretboard" android:host="lab"/>
+            </intent-filter>
+            <!-- Receiving a shared link: any text/plain share containing a
+                 #lab= (or p4fretboard://lab?p=) URL opens the lab on it. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
             </intent-filter>
         </activity>
     </application>

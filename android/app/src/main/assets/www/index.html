@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P4 Fretboard Trainer</title>
-    <link rel="stylesheet" href="styles.css?v=2.1">
+    <link rel="stylesheet" href="styles.css?v=2.2">
 </head>
 <body>
     <div class="container">
@@ -285,7 +285,7 @@
                             <ul>
                                 <li><strong>Presets</strong> — the dropdown loads ii–V–Is, the backdoor cadence, Andalusian, both 12-bar blues forms, rhythm changes, a Coltrane cycle and more — plus a <em>Jazz standards</em> group with 79 real tunes (All of Me to Giant Steps); picking one loads its changes <em>and</em> its own key, so Autumn Leaves opens in G</li>
                                 <li><strong>Transport</strong> — loops the progression at your BPM and bars-per-chord: each chord is strummed while the selected scale plays as a <em>phrase</em> that spans the chord exactly — it enters near where the previous chord's line left off, arches up (stable tones as quarter notes, color tones as eighths) and lands on the tone that best resolves into the next chord, held so it rings across the barline. Space toggles it, chip clicks jump, count-in optional, <strong>swing</strong> gives the line the relaxed triplet feel, and the <strong>feel</strong> selector re-grids the line as straight 8ths, triplets or 16ths (double-time; structural tones still anchor)</li>
-                                <li><strong>Share links</strong> — 🔗 copies a URL like <code>#lab=C@IIm7,V7,Imaj7</code>; plans ride along as compact suffixes (<code>Imaj7*4[ionian*2;lydian;ionian]</code>), so opening it restores the progression, root <em>and</em> scale plans (the hash never leaves the browser)</li>
+                                <li><strong>Share links</strong> — 🔗 copies a URL that restores the whole session: progression, root, the scales you <em>picked</em> and the scale plans (<code>Imaj7*4[ionian*2;lydian]</code>), plus every non-default setting (BPM, feel, swing, weights…) as a compact suffix — <code>#lab=C@IIm7,V7,Imaj7&amp;b=180&amp;sw=0&amp;k=1:mixolydian</code>. An unmodified preset collapses to just its name and root (<code>#lab=~std-autumnleaves@G</code>). The hash never leaves the browser; on Android the button opens the system share sheet</li>
                             </ul>
                         </div>
                     </section>
@@ -526,18 +526,18 @@
     </div>
 
 
-    <script src="tuning.js?v=2.1"></script>
-    <script src="fretboard.js?v=2.1"></script>
-    <script src="circleOfFifths.js?v=2.1"></script>
-    <script src="sound.js?v=2.1"></script>
-    <script src="triads.js?v=2.1"></script>
-    <script src="sequences.js?v=2.1"></script>
-    <script src="mnemonics.js?v=2.1"></script>
-    <script src="intervals.js?v=2.1"></script>
-    <script src="chords.js?v=2.1"></script>
-    <script src="handbook.js?v=2.1"></script>
-    <script src="progression.js?v=2.1"></script>
-    <script src="app.js?v=2.1"></script>
+    <script src="tuning.js?v=2.2"></script>
+    <script src="fretboard.js?v=2.2"></script>
+    <script src="circleOfFifths.js?v=2.2"></script>
+    <script src="sound.js?v=2.2"></script>
+    <script src="triads.js?v=2.2"></script>
+    <script src="sequences.js?v=2.2"></script>
+    <script src="mnemonics.js?v=2.2"></script>
+    <script src="intervals.js?v=2.2"></script>
+    <script src="chords.js?v=2.2"></script>
+    <script src="handbook.js?v=2.2"></script>
+    <script src="progression.js?v=2.2"></script>
+    <script src="app.js?v=2.2"></script>
     <script>
         let currentString, currentFret, correctNote, currentChord, correctChordName;
         let currentSequencePattern = null, currentSequenceName = null;

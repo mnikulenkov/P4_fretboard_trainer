@@ -78,6 +78,35 @@ cp ../index.html ../styles.css ../tuning.js ../fretboard.js ../circleOfFifths.js
 packaged.) Then rebuild. Bump `versionCode`/`versionName` in `app/build.gradle` and
 install over the existing app — updates must be signed with the same keystore.
 
+## Sharing (Progression Lab)
+
+The lab's 🔗 button builds a link to the **public website**
+(`PL_SITE_URL` in `progression.js` — the WebView's virtual origin is unreachable
+from outside, so links never point at it). Sharing works both ways with **zero
+permissions and no network**:
+
+- **Out** — the page calls the `P4Native` JS bridge (`addJavascriptInterface`),
+  which opens the system `ACTION_SEND` sheet (its copy-to-clipboard target
+  replaces the old `window.prompt` fallback).
+- **In** — two intent filters on `MainActivity` (`launchMode="singleTask"` so a
+  running instance receives them via `onNewIntent`):
+  - `p4fretboard://lab?p=<encoded payload>` (ACTION_VIEW/BROWSABLE) — the app's
+    own deep-link scheme. A custom scheme needs no domain verification; App
+    Links (autoVerify) can't work for a github.io *project* page because
+    `/.well-known/assetlinks.json` would have to live at the shared domain root.
+  - `ACTION_SEND` text/plain — sharing any text that contains a `#lab=` URL
+    (or a `p4fretboard://` link) into the app opens the lab on it; text without
+    one just toasts "no link found".
+
+Payload handling rule: Java always normalizes to the *decoded* payload
+(`getQueryParameter` for VIEW, one `URLDecoder` pass for the SEND regex — the
+web side's `encodeURIComponent` never emits `+`, so form-decoding is safe) and
+re-encodes exactly once at the JS boundary (`location.hash` assignment; the
+page's `hashchange` listener applies it). Cold starts seed the initial
+`loadUrl` with the hash instead. Catalog drift is safe: an older APK that
+doesn't know a preset id in a short-form link decodes it to null and quietly
+ignores the link.
+
 ## User data
 
 Score, settings, and logs live in the app's WebView cookies/localStorage (app-private

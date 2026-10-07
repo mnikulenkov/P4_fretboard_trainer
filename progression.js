@@ -1486,6 +1486,105 @@ function progTensionOf(cand) {
     return s ? s.tension : 0.05;
 }
 
+// A candidate id the share grammar may carry (plan segments, picks): an atlas
+// scale, or a chord-arpeggio reference into PROG_QUALITIES.
+function progKnownScaleId(id) {
+    return PROG_SCALES.some(s => s.id === id) ||
+        (typeof id === 'string' && id.indexOf('arp-') === 0 &&
+            PROG_QUALITIES.hasOwnProperty(id.slice(4)));
+}
+
+// The selectable phrase grids (§9.3), model-layer home so share decode can
+// validate the `dv` key (the DOM layer's PL_DIVISIONS aliases this).
+const PROG_DIVISIONS = { eighth: 2, triplet: 3, sixteenth: 4 };
+
+// The transport/ranking knobs a full share link can carry, with their shipped
+// defaults. Only non-default values encode, so a default-state link stays
+// byte-identical to the bare v2.0 payload.
+const PROG_SHARE_DEFAULTS = {
+    bpm: 120, bars: 2, loop: true, countIn: false, swing: true, div: 'eighth',
+    color: 0.5, flow: true, ghosts: true, linkDyads: true
+};
+
+// settings is plState-shaped {bpm, bars, loop, countIn, swing, div, color,
+// flow, ghosts, linkDyads, noResolve}; picks is chord index -> scale id.
+// Returns the '&k=v' block ('' when everything is default), keys in a fixed
+// order so equal states encode equal links.
+function progEncodeShareSettings(settings, picks) {
+    const s = settings || {};
+    const d = PROG_SHARE_DEFAULTS;
+    const bool = v => v ? '1' : '0';
+    const parts = [];
+    if (typeof s.bpm === 'number' && isFinite(s.bpm) && Math.round(s.bpm) !== d.bpm) {
+        parts.push('b=' + Math.round(s.bpm));
+    }
+    if (typeof s.bars === 'number' && isFinite(s.bars) && s.bars !== d.bars) {
+        parts.push('bc=' + s.bars);
+    }
+    if (typeof s.loop === 'boolean' && s.loop !== d.loop) parts.push('l=' + bool(s.loop));
+    if (typeof s.countIn === 'boolean' && s.countIn !== d.countIn) parts.push('ci=' + bool(s.countIn));
+    if (typeof s.swing === 'boolean' && s.swing !== d.swing) parts.push('sw=' + bool(s.swing));
+    if (typeof s.div === 'string' && PROG_DIVISIONS[s.div] && s.div !== d.div) parts.push('dv=' + s.div);
+    if (typeof s.color === 'number' && isFinite(s.color) &&
+        Math.round(s.color * 100) / 100 !== d.color) {
+        parts.push('cw=' + (Math.round(s.color * 100) / 100));
+    }
+    if (typeof s.flow === 'boolean' && s.flow !== d.flow) parts.push('fl=' + bool(s.flow));
+    if (typeof s.ghosts === 'boolean' && s.ghosts !== d.ghosts) parts.push('gh=' + bool(s.ghosts));
+    if (typeof s.linkDyads === 'boolean' && s.linkDyads !== d.linkDyads) parts.push('ld=' + bool(s.linkDyads));
+    const nr = s.noResolve;
+    const nrIdx = nr ? Object.keys(nr).filter(i => nr[i]) : [];
+    if (nrIdx.length) parts.push('nr=' + nrIdx.join(','));
+    const pk = picks || {};
+    const pkIdx = Object.keys(pk).filter(i => pk[i] && progKnownScaleId(pk[i]));
+    if (pkIdx.length) parts.push('k=' + pkIdx.map(i => i + ':' + pk[i]).join(','));
+    return parts.join('&');
+}
+
+// Parse '&'-joined key=value segments. Junk keys and malformed values drop
+// per-key (one bad key never nukes a valid one); numbers clamp exactly like
+// plRestore. Returns {settings, picks} holding only what parsed — absent
+// keys leave the recipient's own values alone. chordCount (from the decoded
+// progression) prunes stale pick indexes.
+function progDecodeShareSettings(segments, chordCount) {
+    const settings = {};
+    const picks = {};
+    const BOOL_KEYS = { l: 'loop', ci: 'countIn', sw: 'swing', fl: 'flow', gh: 'ghosts', ld: 'linkDyads' };
+    segments.forEach(seg => {
+        const eq = seg.indexOf('=');
+        if (eq < 1) return;
+        const key = seg.slice(0, eq);
+        const val = seg.slice(eq + 1);
+        if (key === 'b' || key === 'bc' || key === 'cw') {
+            const n = parseFloat(val);
+            if (!isFinite(n)) return;
+            if (key === 'b') settings.bpm = Math.min(240, Math.max(40, n));
+            else if (key === 'bc') settings.bars = Math.min(8, Math.max(1, n));
+            else settings.color = Math.min(1, Math.max(0, n));
+        } else if (BOOL_KEYS[key]) {
+            if (val === '1' || val === '0') settings[BOOL_KEYS[key]] = val === '1';
+        } else if (key === 'dv') {
+            if (PROG_DIVISIONS[val]) settings.div = val;
+        } else if (key === 'nr') {
+            val.split(',').forEach(t => {
+                if (/^\d+$/.test(t)) {
+                    if (!settings.noResolve) settings.noResolve = {};
+                    settings.noResolve[t] = true;
+                }
+            });
+        } else if (key === 'k') {
+            val.split(',').forEach(t => {
+                const m = /^(\d+):([A-Za-z0-9_-]+)$/.exec(t);
+                if (!m || !progKnownScaleId(m[2])) return;
+                const idx = parseInt(m[1], 10);
+                if (chordCount != null && idx >= chordCount) return;
+                picks[idx] = m[2];
+            });
+        }
+    });
+    return { settings: settings, picks: picks };
+}
+
 // Plan suffix grammar (share links only — the editor itself never needs it):
 //   Imaj7*4[ionian*2;lydian;ionian~01]
 // segments joined by ';', each `id` or `id*bars` (the absorbing last segment
@@ -1513,9 +1612,7 @@ function progDecodePlanSuffix(str) {
         const m = /^([^*]+?)(?:\*(\d+(?:\.\d+)?|\.\d+))?$/.exec(raws[i]);
         if (!m) return null;
         const id = m[1];
-        const known = PROG_SCALES.some(s => s.id === id) ||
-            (id.indexOf('arp-') === 0 && PROG_QUALITIES.hasOwnProperty(id.slice(4)));
-        if (!known) return null;
+        if (!progKnownScaleId(id)) return null;
         const bars = m[2] != null ? parseFloat(m[2]) : null;
         if (m[2] != null && (!isFinite(bars) || bars <= 0 || bars > 64)) return null;
         segments.push({ id: id, bars: i === raws.length - 1 ? null : (bars == null ? 1 : bars) });
@@ -1527,12 +1624,34 @@ function progDecodePlanSuffix(str) {
     return { segments: segments, links: links };
 }
 
+// A progression collapses to a preset reference when nothing user-made rides
+// on it: the text is the preset's (whitespace-insensitive) and no plans,
+// picks or per-chord resolution overrides exist. The base root and transport
+// settings do not count as modifications — the short link carries the root,
+// and settings never ride it by design.
+function progFindSharePreset(text, plans, picks, noResolve) {
+    const empty = o => !o || !Object.keys(o).some(k => o[k]);
+    if (!empty(plans) || !empty(picks) || !empty(noResolve)) return null;
+    const norm = s => String(s).split(/\s+/).filter(Boolean).join(' ');
+    const t = norm(text);
+    if (!t) return null;
+    const hit = PROG_PRESETS.find(p => norm(p.text) === t);
+    return hit ? hit.id : null;
+}
+
+function progEncodePresetShare(presetId, basePc) {
+    return '~' + presetId + '@' + progNoteName(basePc);
+}
+
 // `C@IIm7,V7,Imaj7` — root name + @ + comma-joined tokens (commas never occur
 // in the grammar, and the payload is URL-encoded by the DOM layer, so '#' and
 // unicode aliases survive). With `plans` (chord index -> plan, §16.9) each
 // chord token gains its plan suffix; the absorbing last segment and the
-// all-on link mask encode compactly.
-function progEncodeShare(basePc, text, plans) {
+// all-on link mask encode compactly. `picks` (chord index -> scale id for
+// plan-less chords) and `settings` (§11 knobs) ride as an '&key=value' block
+// after the tokens — the grammar never uses '&', so the split is unambiguous.
+// A default state encodes no block at all (byte-identical to v2.0 links).
+function progEncodeShare(basePc, text, plans, picks, settings) {
     const tokens = String(text).split(/\s+/).filter(Boolean);
     let payload = tokens;
     if (plans) {
@@ -1547,19 +1666,37 @@ function progEncodeShare(basePc, text, plans) {
             return tok.source + suffix;
         });
     }
-    return progNoteName(basePc) + '@' + payload.join(',');
+    let out = progNoteName(basePc) + '@' + payload.join(',');
+    const extra = progEncodeShareSettings(settings, picks);
+    if (extra) out += '&' + extra;
+    return out;
 }
 
 function progDecodeShare(str) {
-    const m = /^([A-Ga-g][#b♯♭]{0,2})@(.+)$/.exec(String(str).trim());
+    const raw = String(str).trim();
+    // Preset short-form: "~id@root" — an unmodified shipped preset. The id is
+    // never alias-folded (ids contain '-', which folding would rewrite).
+    if (raw.charAt(0) === '~') {
+        const pm = /^~([A-Za-z0-9_-]+)@([A-Ga-g][#b♯♭]{0,2})$/.exec(raw);
+        if (!pm) return null;
+        const preset = PROG_PRESETS.find(p => p.id === pm[1]);
+        if (!preset) return null; // an older catalog quietly ignores the link
+        const ppc = PROG_NOTE_PC[progFoldAliases(pm[2]).toUpperCase()];
+        if (ppc === undefined) return null;
+        return { basePc: ppc, text: preset.text, presetId: preset.id };
+    }
+    // Settings ride after '&' — split them off before the root/tokens regex.
+    const amp = raw.indexOf('&');
+    const main = amp === -1 ? raw : raw.slice(0, amp);
+    const m = /^([A-Ga-g][#b♯♭]{0,2})@(.+)$/.exec(main);
     if (!m) return null;
     const pc = PROG_NOTE_PC[progFoldAliases(m[1]).toUpperCase()];
     if (pc === undefined) return null;
     const plans = {};
     const textParts = [];
     let ci = 0;
-    m[2].split(',').forEach(raw => {
-        const tok = raw.trim();
+    m[2].split(',').forEach(rawTok => {
+        const tok = rawTok.trim();
         if (!tok) return;
         let head = tok, suffix = null;
         const pm = /^(.+?)\[([^\]]*)\]$/.exec(tok);
@@ -1578,6 +1715,11 @@ function progDecodeShare(str) {
     if (!text) return null;
     const out = { basePc: pc, text: text };
     if (Object.keys(plans).length) out.plans = plans;
+    if (amp !== -1) {
+        const dec = progDecodeShareSettings(raw.slice(amp + 1).split('&'), ci);
+        if (Object.keys(dec.picks).length) out.picks = dec.picks;
+        if (Object.keys(dec.settings).length) out.settings = dec.settings;
+    }
     return out;
 }
 
@@ -1644,7 +1786,7 @@ function plSave() {
             t: plState.text, r: plState.basePc,
             b: plState.bpm, bc: plState.bars, l: plState.loop, ci: plState.countIn,
             nr: plState.noResolve,
-            p: plState.plan, fl: plState.flow, cw: plState.color,
+            p: plState.plan, pk: plState.pick, fl: plState.flow, cw: plState.color,
             gh: plState.ghosts, ld: plState.linkDyads, sw: plState.swing, dv: plState.div
         })), 365);
     } catch (e) { /* cookie budget exhausted — non-fatal */ }
@@ -1663,6 +1805,7 @@ function plRestore() {
         if (saved && typeof saved.ci === 'boolean') plState.countIn = saved.ci;
         if (saved && saved.nr && typeof saved.nr === 'object') plState.noResolve = saved.nr;
         if (saved && saved.p && typeof saved.p === 'object') plState.plan = saved.p;
+        if (saved && saved.pk && typeof saved.pk === 'object') plState.pick = saved.pk;
         if (saved && typeof saved.fl === 'boolean') plState.flow = saved.fl;
         if (saved && typeof saved.cw === 'number') plState.color = Math.min(1, Math.max(0, saved.cw));
         if (saved && typeof saved.gh === 'boolean') plState.ghosts = saved.gh;
@@ -2126,15 +2269,57 @@ function plApplyPreset(id) {
     plRefresh();
 }
 
-function plShareUrl() {
-    return location.origin + location.pathname + location.search +
-        '#lab=' + encodeURIComponent(progEncodeShare(plState.basePc, plState.text, plState.plan));
+// The canonical public URL of the deployed app — what share links point at
+// when the running page isn't reachable from outside (the Android WebView's
+// virtual origin, file://, a localhost dev copy). A real deployment shares
+// its own origin, so forks deployed elsewhere keep their own URL.
+const PL_SITE_URL = 'https://mnikulenkov.github.io/P4_fretboard_trainer/';
+
+function plShareBaseUrl() {
+    if (typeof location === 'undefined') return PL_SITE_URL;
+    const local = (location.protocol !== 'http:' && location.protocol !== 'https:') ||
+        location.hostname === 'appassets.androidplatform.net' ||
+        location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    return local ? PL_SITE_URL : location.origin + location.pathname + location.search;
 }
 
+function plShareUrl() {
+    // An unmodified preset collapses to "~id@root" — name and base root only
+    // (§11); anything user-made (edits, plans, picks, toggles) goes full.
+    const presetId = progFindSharePreset(plState.text, plState.plan, plState.pick, plState.noResolve);
+    let payload;
+    if (presetId) {
+        payload = progEncodePresetShare(presetId, plState.basePc);
+    } else {
+        // picks ride for plan-less chords only (a plan owns its chord's sound)
+        const picks = {};
+        Object.keys(plState.pick).forEach(i => {
+            if (plState.pick[i] && !plState.plan[i]) picks[i] = plState.pick[i];
+        });
+        payload = progEncodeShare(plState.basePc, plState.text, plState.plan, picks, {
+            bpm: plState.bpm, bars: plState.bars, loop: plState.loop, countIn: plState.countIn,
+            swing: plState.swing, div: plState.div, color: plState.color, flow: plState.flow,
+            ghosts: plState.ghosts, linkDyads: plState.linkDyads, noResolve: plState.noResolve
+        });
+    }
+    return plShareBaseUrl() + '#lab=' + encodeURIComponent(payload);
+}
+
+// On Android (P4Native bridge injected by MainActivity) the button opens the
+// system share sheet — the native way out of a WebView. Elsewhere it copies.
 function plCopyShare() {
     const url = plShareUrl();
+    const native = !!(window.P4Native && typeof window.P4Native.share === 'function');
     const btn = document.getElementById('pl-share');
-    const reset = () => { if (btn) btn.textContent = '🔗 Copy link'; };
+    const label = native ? '🔗 Share' : '🔗 Copy link';
+    const reset = () => { if (btn) btn.textContent = label; };
+    if (native) {
+        try {
+            window.P4Native.share(url, 'P4 Progression Lab');
+            if (btn) { btn.textContent = '✓ Shared'; setTimeout(reset, 1600); }
+            return;
+        } catch (e) { /* bridge broke — fall through to the clipboard */ }
+    }
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(url).then(() => {
             if (btn) { btn.textContent = '✓ Link copied'; setTimeout(reset, 1600); }
@@ -2152,21 +2337,41 @@ function plApplyHash() {
     if (typeof location === 'undefined') return false;
     const hash = location.hash || '';
     if (hash.indexOf('#lab=') !== 0) return false;
-    const decoded = progDecodeShare(decodeURIComponent(hash.slice(5)));
+    let decoded = null;
+    try {
+        decoded = progDecodeShare(decodeURIComponent(hash.slice(5)));
+    } catch (e) { decoded = null; } // a stray '%' — treat as no link
     if (!decoded) return false;
+    plTransportStop(); // a link applied mid-loop would strand the schedule
     plState.text = decoded.text;
     plState.basePc = decoded.basePc;
     plState.chordIdx = 0;
-    plState.pick = {};
-    plState.noResolve = {};
+    plState.pick = decoded.picks || {}; // chosen scales ride the link (§11)
+    plState.noResolve = (decoded.settings && decoded.settings.noResolve) || {};
     plState.plan = decoded.plans || {}; // scale plans ride the link (§16.9)
     plState.segIdx = 0;
+    const s = decoded.settings || {};
+    if (typeof s.bpm === 'number') plState.bpm = s.bpm;
+    if (typeof s.bars === 'number') plState.bars = s.bars;
+    if (typeof s.loop === 'boolean') plState.loop = s.loop;
+    if (typeof s.countIn === 'boolean') plState.countIn = s.countIn;
+    if (typeof s.swing === 'boolean') plState.swing = s.swing;
+    if (PL_DIVS[s.div]) plState.div = s.div;
+    if (typeof s.color === 'number') plState.color = s.color;
+    if (typeof s.flow === 'boolean') plState.flow = s.flow;
+    if (typeof s.ghosts === 'boolean') plState.ghosts = s.ghosts;
+    if (typeof s.linkDyads === 'boolean') plState.linkDyads = s.linkDyads;
+    if (decoded.presetId) {
+        const sel = document.getElementById('pl-preset');
+        if (sel) sel.value = decoded.presetId; // show what loaded
+    }
     try {
         history.replaceState(null, '', location.pathname + location.search);
     } catch (e) {
         // file:// is an opaque origin: some browsers refuse replaceState with
         // a URL. location.replace does the same same-document cleanup without
-        // adding a history entry.
+        // adding a history entry. (It reloads the page — the hash is already
+        // gone from that URL, so this cannot re-trigger the apply.)
         try { location.replace(location.href.split('#')[0]); } catch (e2) { /* leave it */ }
     }
     return true;
@@ -2611,7 +2816,7 @@ const PL_SWING = 0.33;
 // The line's grid (§9.3 divisions): slots per BEAT per division — straight
 // eighths (default), triplet eighths (12/8 lilt, 3 per beat), sixteenths
 // (double-time runs). Bars × these × 4 = slots per bar.
-const PL_DIVS = { eighth: 2, triplet: 3, sixteenth: 4 };
+const PL_DIVS = PROG_DIVISIONS; // §9.3 grids — shared with share-link decode
 const PL_DIV_LABELS = { eighth: '8ths', triplet: 'triplets', sixteenth: '16ths' };
 
 function plSubdiv() {
@@ -3295,10 +3500,11 @@ function plSetPeek(on) {
     if (panel) panel.classList.toggle('pl-peek', plState.peek);
 }
 
-function openProgressionLab() {
-    initProgressionLab();
-    plRestore();
-    plApplyHash(); // a shared #lab= link beats the cookie
+// The reveal half of opening the lab, without the state plumbing — used both
+// by openProgressionLab (after restore + hash-apply) and by the hashchange
+// path, where plApplyHash has already seeded the state and plRestore must
+// NOT run (it would clobber the just-applied link with the cookie).
+function plRevealLab() {
     plState.open = true;
     // close sibling popups (the top bar's mutual-exclusion convention)
     ['circle-of-fifths-tooltip', 'instructions-tooltip', 'settings-popup'].forEach(id => {
@@ -3312,6 +3518,13 @@ function openProgressionLab() {
     document.getElementById('pl-input').value = plState.text;
     plWriteTransportInputs();
     plRefresh();
+}
+
+function openProgressionLab() {
+    initProgressionLab();
+    plRestore();
+    plApplyHash(); // a shared #lab= link beats the cookie (§11)
+    plRevealLab();
 }
 
 function closeProgressionLab() {
@@ -3365,6 +3578,9 @@ function initProgressionLab() {
     panel.className = 'instructions-tooltip pl-popup hidden';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Progression Lab');
+    // The Android bridge (P4Native) turns the share button into the system
+    // share sheet; everywhere else it copies the link.
+    const plNativeShare = !!(window.P4Native && typeof window.P4Native.share === 'function');
     panel.innerHTML =
         '<div class="pl-head">' +
         '<span class="pl-title">🎼 Progression Lab</span>' +
@@ -3384,7 +3600,8 @@ function initProgressionLab() {
         '<div id="pl-roots" class="pl-roots"></div>' +
         '<select id="pl-preset" class="pl-select hb-quiz-exempt" title="Load a preset progression">' +
         '<option value="">Presets…</option></select>' +
-        '<button type="button" id="pl-share" class="pl-sharebtn" title="Copy a link that opens the lab on this progression and root">🔗 Copy link</button>' +
+        '<button type="button" id="pl-share" class="pl-sharebtn" title="Share a link that opens the lab on this progression, root, chosen scales and settings">🔗 ' +
+        (plNativeShare ? 'Share' : 'Copy link') + '</button>' +
         '</div>' +
         '<div class="pl-controls pl-transport-row">' +
         '<button type="button" id="pl-play-prog" class="pl-playbtn" ' +
@@ -3555,14 +3772,25 @@ function initProgressionLab() {
         }
     });
 
-    // Handbook cross-link, and shared #lab= links open the lab on arrival
-    // (the hash then wins over the saved cookie, §11).
+    // Handbook cross-link, and shared #lab= links open the lab on arrival.
+    // Detect without consuming: openProgressionLab restores the cookie FIRST
+    // and then applies the hash, so the link wins over the cookie (§11). (The
+    // old consume-then-open order let plRestore clobber the just-applied
+    // link for any returning user.)
     const hbOpen = document.getElementById('hb-open-lab');
     if (hbOpen) hbOpen.addEventListener('click', () => {
         if (typeof closeHandbook === 'function') closeHandbook();
         openProgressionLab();
     });
-    if (plApplyHash()) openProgressionLab();
+    // A #lab= hash arriving AFTER load (a link pasted into the URL bar, or
+    // the Android bridge setting location.hash for a shared progression)
+    // seeds the state and reveals the lab. replaceState stripping does not
+    // refire hashchange, and non-lab hashes never match, so no loops.
+    window.addEventListener('hashchange', () => {
+        if ((location.hash || '').indexOf('#lab=') !== 0) return;
+        if (plApplyHash()) plRevealLab();
+    });
+    if (/^#lab=/.test(location.hash || '')) openProgressionLab();
 }
 
 if (typeof module !== 'undefined' && module.exports) {
@@ -3586,8 +3814,13 @@ if (typeof module !== 'undefined' && module.exports) {
         PROG_WEIGHTS: PROG_WEIGHTS,
         PROG_PRESETS: PROG_PRESETS,
         PROG_NOTE_PC: PROG_NOTE_PC,
+        PROG_DIVISIONS: PROG_DIVISIONS,
+        PROG_SHARE_DEFAULTS: PROG_SHARE_DEFAULTS,
         encodeShare: progEncodeShare,
         decodeShare: progDecodeShare,
+        encodePresetShare: progEncodePresetShare,
+        findSharePreset: progFindSharePreset,
+        knownScaleId: progKnownScaleId,
         foldAliases: progFoldAliases,
         parseSingle: progParseSingle,
         parseChordToken: progParseChordToken,

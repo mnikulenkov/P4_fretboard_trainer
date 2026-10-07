@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -21,8 +22,12 @@ import android.widget.Toast;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Self-contained WebView shell around the bundled guitar trainer.
@@ -39,6 +44,12 @@ public class MainActivity extends Activity {
     private static final String START_URL = "https://" + VIRTUAL_HOST + "/index.html";
     private static final String ASSET_ROOT = "www";
 
+    /** Deep links: p4fretboard://lab?p=<payload> (payload = the #lab= share body). */
+    private static final String LAB_SCHEME = "p4fretboard";
+    /** Matches a Pages share URL or a raw p4fretboard link inside shared text. */
+    private static final Pattern LAB_LINK = Pattern.compile("(?:#lab=|" + LAB_SCHEME + "://lab\\?p=)([^\\s&]+)");
+    private static final int LAB_PAYLOAD_MAX = 8192;
+
     /** Overlays that open/close via the "hidden" CSS class (ES5 for old WebViews). */
     private static final String CLOSE_OVERLAY_JS =
             "(function(){var c=false;var ids=['settings-popup','instructions-tooltip',"
@@ -48,6 +59,8 @@ public class MainActivity extends Activity {
             + "return c?'closed':'none';})()";
 
     private WebView webView;
+    private boolean pageLoaded = false;
+    private String pendingLabPayload = null;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -69,6 +82,9 @@ public class MainActivity extends Activity {
         settings.setTextZoom(100); // pin layout against system font scaling
 
         CookieManager.getInstance().setAcceptCookie(true);
+
+        // Native share sheet for the Progression Lab's 🔗 button (P4Native.share).
+        webView.addJavascriptInterface(new ShareBridge(), "P4Native");
 
         // Without a WebChromeClient, alert() calls in the app are silently dropped.
         webView.setWebChromeClient(new WebChromeClient());
@@ -96,13 +112,120 @@ public class MainActivity extends Activity {
                 }
                 return null; // anything else fails offline — the intended failure mode
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                pageLoaded = true;
+                if (pendingLabPayload != null) {
+                    String payload = pendingLabPayload;
+                    pendingLabPayload = null;
+                    injectLabPayload(payload);
+                }
+            }
         });
 
         if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
             WebView.setWebContentsDebuggingEnabled(true); // chrome://inspect over adb
         }
 
-        webView.loadUrl(START_URL);
+        // A p4fretboard:// deep link or a shared #lab= URL may have launched us:
+        // seed the first page load with it (the page applies the hash on arrival).
+        String payload = extractLabPayload(getIntent());
+        webView.loadUrl(START_URL + (payload != null ? "#lab=" + Uri.encode(payload) : ""));
+    }
+
+    /** JS bridge: the page calls P4Native.share(url, title) — the native way
+     *  out of a WebView (the system sheet also offers copy-to-clipboard).
+     *  Methods run on a binder thread, so hop to the UI thread. */
+    private class ShareBridge {
+        @JavascriptInterface
+        public void share(final String text, final String title) {
+            runOnUiThread(() -> {
+                Intent send = new Intent(Intent.ACTION_SEND);
+                send.setType("text/plain");
+                send.putExtra(Intent.EXTRA_TEXT, text != null ? text : "");
+                if (title != null) send.putExtra(Intent.EXTRA_SUBJECT, title);
+                try {
+                    startActivity(Intent.createChooser(send, title != null ? title : "Share"));
+                } catch (ActivityNotFoundException e) {
+                    Toast.makeText(MainActivity.this, R.string.no_share_target, Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+    }
+
+    /** Pulls a Progression Lab share payload out of a VIEW (p4fretboard://lab?p=…)
+     *  or SEND (text containing a #lab= URL) intent. Always returns the DECODED
+     *  payload — re-encoding happens exactly once, at the JS boundary. */
+    private String extractLabPayload(Intent intent) {
+        if (intent == null) return null;
+        Uri data = intent.getData();
+        if (data != null && LAB_SCHEME.equals(data.getScheme())) {
+            return sanitizeLabPayload(data.getQueryParameter("p"));
+        }
+        if (Intent.ACTION_SEND.equals(intent.getAction())) {
+            CharSequence cs = intent.getCharSequenceExtra(Intent.EXTRA_TEXT);
+            if (cs == null) return null;
+            Matcher m = LAB_LINK.matcher(cs.toString());
+            while (m.find()) {
+                String decoded;
+                try {
+                    decoded = URLDecoder.decode(m.group(1), "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    return null; // UTF-8 is always supported; unreachable
+                } catch (IllegalArgumentException e) {
+                    continue; // stray '%' in unrelated text — try the next match
+                }
+                decoded = sanitizeLabPayload(decoded);
+                if (decoded != null) return decoded;
+            }
+            Toast.makeText(this, R.string.no_lab_link, Toast.LENGTH_SHORT).show();
+        }
+        return null;
+    }
+
+    /** Cheap gate (shape validation is the page's job — its decode is
+     *  junk-tolerant); the length cap keeps the JS injection small. */
+    private static String sanitizeLabPayload(String payload) {
+        if (payload == null || payload.isEmpty() || payload.length() > LAB_PAYLOAD_MAX) return null;
+        return payload;
+    }
+
+    /** Feeds a decoded share payload to the page: location.hash assignment
+     *  fires hashchange, the lab's listener applies it and opens the panel.
+     *  encodeURIComponent runs inside the page so the payload is encoded
+     *  exactly once. */
+    private void injectLabPayload(String payload) {
+        if (webView == null || payload == null) return;
+        webView.evaluateJavascript(
+                "location.hash = '#lab=' + encodeURIComponent(" + jsonQuote(payload) + ");", null);
+    }
+
+    /** A JSON string literal for evaluateJavascript (escapes quotes, backslashes,
+     *  control characters, and anything non-ASCII as unicode escapes — old
+     *  WebViews reject raw U+2028/U+2029 in string literals). */
+    private static String jsonQuote(String s) {
+        StringBuilder sb = new StringBuilder(s.length() + 2);
+        sb.append('"');
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '"' || c == '\\') sb.append('\\').append(c);
+            else if (c < 0x20 || c > 0x7E) sb.append(String.format("\\u%04x", (int) c));
+            else sb.append(c);
+        }
+        return sb.append('"').toString();
+    }
+
+    /** Deep links / shares arriving while the activity exists (launchMode
+     *  singleTask): apply now if the page is up, else queue for onPageFinished. */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String payload = extractLabPayload(intent);
+        if (payload == null) return;
+        if (pageLoaded) injectLabPayload(payload);
+        else pendingLabPayload = payload;
     }
 
     /** Serves assets/www/<path> with the right MIME type; guards path traversal. */

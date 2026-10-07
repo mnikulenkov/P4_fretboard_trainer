@@ -648,17 +648,61 @@ running — marks, transport pulse and all; the pill, `L`, or the 🎼 button re
 
 ## 11. State and sharing
 
-- Cookie `p4lab` (respecting the app's ~4 KB budget): base root, accidental preference,
-  BPM, bars, weights, last progression, and a short history list (progression tokens
-  are compact; trim oldest beyond budget).
-- **URL hash deep links**: `#lab=C@IIm7,V7,Imaj7` — cheap sharing; the hash never hits
-  a server, safe on GitHub Pages and in the Android WebView. The panel's 🔗 button
-  builds and copies the link (payload URL-encoded so `#` in tokens survives); a
-  `#lab=` hash present on load opens the lab seeded with that progression and root,
-  overriding the cookie. The deep link is **one-shot**: once applied, the hash is
-  stripped from the URL with a same-document `history.replaceState`, so reloading or
-  reopening the page does not reopen the lab (the progression itself persists via the
-  cookie).
+- Cookie `p4lab` (respecting the app's ~4 KB budget): base root, BPM, bars, loop,
+  count-in, swing, division, weights, flow, ghosts, link-dyads, the last progression,
+  its per-chord plans **and picks**, and the per-chord resolution toggles.
+- **URL hash deep links** — `#lab=<payload>`; the hash never hits a server, safe on
+  GitHub Pages and in the Android WebView. The payload grammar (model layer,
+  `progEncodeShare`/`progDecodeShare`, junk-tolerant, legacy links decode unchanged):
+
+  ```
+  payload   := full | preset
+  preset    := '~' presetId '@' rootName                  e.g. ~std-autumnleaves@G
+  full      := rootName '@' tokens [planSuffixes] ['&' settings]
+  settings  := key '=' value { '&' key '=' value }        (mini query string)
+  ```
+
+  - **Plan suffixes** ride per chord token as before (§16.9):
+    `Imaj7*4[ionian*2;lydian;ionian~01]`.
+  - **Picks** (chosen scales of plan-less chords) ride as `k=idx:scaleId`
+    (comma-joined): `k=1:mixolydian`.
+  - **Settings** ride with the cookie letters — `b` bpm · `bc` bars · `l` loop ·
+    `ci` count-in · `sw` swing · `dv` division · `cw` safety↔color · `fl` flow ·
+    `gh` ghosts · `ld` link-dyads · `nr` resolution-off chord indexes. **Only
+    non-default values encode**, so a default-state link is byte-identical to the
+    bare v2.0 payload `C@IIm7,V7,Imaj7` (test-pinned). Decode clamps like
+    `plRestore` and drops junk keys/pick ids per-key.
+  - **Preset short-form**: when the progression is an *unmodified* preset — text
+    identical (whitespace-insensitive), no plans, no picks, no resolution toggles;
+    root and settings changes don't count — the link is just its id and root
+    (`~std-autumnleaves@G`, "name and base root only", by design carrying no
+    settings). Unknown ids on an older catalog decode to null (the link is quietly
+    ignored). Transposed standards still collapse (the id names the changes, the
+    root the key).
+  - **Canonical URL**: the 🔗 button builds `location` URLs on real deployments,
+    but `PL_SITE_URL` (the GitHub Pages site) when the page itself is unreachable
+    from outside — the Android WebView's virtual origin, `file://`, localhost.
+  - **Semantics**: a hash present on load opens the lab seeded with everything
+    above, **overriding the cookie** (restore-then-apply order — the old
+    apply-then-restore order let the cookie clobber the link for returning users;
+    fixed). A hash arriving after load (pasted URL, Android bridge) does the same
+    via a `hashchange` listener. The deep link is **one-shot**: once applied, the
+    hash is stripped with a same-document `history.replaceState`, so reloading or
+    reopening the page does not reopen the lab (the state itself persists via the
+    cookie).
+
+- **Android sharing** (the app is not a website — links must still work):
+  - *Outbound*: the WebView exposes a `P4Native` JS bridge
+    (`addJavascriptInterface`); the 🔗 button (labelled "Share") calls
+    `P4Native.share(url, title)` → the system `ACTION_SEND` sheet. No permissions;
+    the sheet's copy-to-clipboard target replaces the prompt fallback.
+  - *Inbound*: the app registers `p4fretboard://lab?p=<encoded payload>`
+    (ACTION_VIEW/BROWSABLE) and an `ACTION_SEND` text/plain receiver that
+    regex-extracts a `#lab=` payload from any shared text. Java always normalizes
+    to the *decoded* payload and re-encodes exactly once at the JS boundary
+    (`location.hash` assignment, handled by the hashchange listener). App Links
+    (autoVerify) were rejected: a github.io project page cannot host
+    `/.well-known/assetlinks.json` at the shared domain root.
 
 ---
 
@@ -912,4 +956,5 @@ links all on, arpeggios excluded:
 | 8 — transport | what-changes ghost pills (pc-set diff vs the next segment), "sound the link" dyads at internal boundaries. Per-segment scheduling, segment-highlight follow and neck pill switching already shipped with Phase 7. **Done** — `plGhostTones` diffs the pc-sets and `progGhostPositions` marks the appearing tones as dashed `.pl-ghost` pills one window around the current line (toggle *what changes*, cookie `gh`); `progLinkNotes` picks each boundary's strongest *moving* resolver and the transport plays it as a from→to dyad (half-eighth grace) in place of the new segment's first line note, pulsing both cells (toggle *sound link*, cookie `ld`) — over `Imaj7[ionian→lydian]` that is F→E, the 4 falling to 3. **Bugfix that fell out of the ghost tests:** `progScalePositions`' absolute scaffold was `pc + 24 − 5·s` over pitch *classes* — subtracting the fourths changes the pitch class itself, so every string but the highest has marked (and, through the transport, *played*) wrong notes since v2.0; the scaffold is now unwrapped cumulatively from the lowest string, and per-cell "sounds the degree it claims" checks pin it (`(openPc + fret) % 12` convention, 5632 checks green; the old tests only asserted self-consistency inside the broken coordinate space). |
 | 9 — polish | tension-curve sparkline across the progression, plan presets (blues ramp, Coltrane alternation), share-link plan encoding, handbook section, Android asset refresh. **Done** — the tension strip under the chord chips renders one bar per segment (width = duration, height/opacity = `progTensionOf`, click jumps, live highlight follows the transport); the plan strip's *✨ all chords* applies a strategy to every chord at once (the blues-ramp / Coltrane-alternation recipes are "ladder/contrast over a form preset"); share links carry plans as compact suffixes (`Imaj7*4[ionian*2;lydian;ionian~01]`, `progEncodeShare`/`progDecodeShare`, junk-tolerant, legacy links unchanged); the handbook gained a *Scale plans* section and the share bullet documents suffixes; Android `www/` refreshed and asset URLs bumped to `?v=2.1`. 5647 checks green. |
 | 10 — phrase playback | §9.3: replace the cropped/mechanical cycle tiling with span-exact phrases (entry chaining, atlas-weighted durations, resolver landings, accents), swing, ring-out endings, dyad landing coordination. **Done** — `progPhrase` + `progLandingTone` + multi-octave `progScalePositions` in the model layer (Node/browser-tested: 9437 checks green, incl. the dorian anchor and the avoid-note landing rejection); transport items carry phrases (per-segment, slot-local), off-beat swing at ×⅓ eighth (toggle, cookie `sw`), note decays scale with notated duration, natural ends fade instead of chopping, "sound the link" plays only the to-tone over the held landing; handbook *Playing it* bullet rewritten; Android `www/` refreshed (asset URLs unchanged). |
-| 11 — divisions | §9.3: selectable grid — straight eighths / triplet eighths / sixteenths ("feel" select, cookie `dv`). **Done** — the grid is one number (`slotsPerBar`, default 8, unchanged defaults everywhere): phrase durations are grid-relative so density follows (2 bars of dorian: 9/15/19 events), the lead-in is one grid-eighth, plan realization scales its half-bar minimum, swing shifts exactly the odd-eighth slots (triplets never, 16ths only the eighth skeleton), decays clamp to the grid, and a change mid-loop re-times items in place. 9583 checks green. | |
+| 11 — divisions | §9.3: selectable grid — straight eighths / triplet eighths / sixteenths ("feel" select, cookie `dv`). **Done** — the grid is one number (`slotsPerBar`, default 8, unchanged defaults everywhere): phrase durations are grid-relative so density follows (2 bars of dorian: 9/15/19 events), the lead-in is one grid-eighth, plan realization scales its half-bar minimum, swing shifts exactly the odd-eighth slots (triplets never, 16ths only the eighth skeleton), decays clamp to the grid, and a change mid-loop re-times items in place. 9583 checks green. |
+| 12 — share links | §11 rework: full links carry picks + all non-default settings; unmodified presets collapse to `~id@root`; Android-native sharing. **Done** — `progEncodeShareSettings`/`progDecodeShareSettings` (per-key junk tolerance, `plRestore`-mirroring clamps, fixed key order), `progEncodePresetShare`/`progFindSharePreset` (pristine = same whitespace-normalized text, no plans/picks/toggles), `progDecodeShare` learns both forms; cookie-clobber bug fixed (init detects the hash without consuming; `openProgressionLab` restores *then* applies; `plRevealLab` extracted for the new `hashchange` path); cookie persists picks (`pk`); share URLs canonicalized to `PL_SITE_URL` from the WebView/file/localhost; Android gains the `P4Native` share bridge, a `p4fretboard://lab` deep link, an `ACTION_SEND` receiver (payload decoded once in Java, re-encoded once at the JS boundary) and `singleTask` routing; asset URLs bumped to `?v=2.2`, APK version unchanged. 9885 checks green. |
