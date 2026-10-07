@@ -675,3 +675,157 @@ JazzGuitar.be (bII7 vs subV); Wikipedia: Borrowed chord; Master the Score / Lear
 Standards / Piano With Jonny (modal interchange); Open Music Theory (neo-Riemannian);
 Riemann, *Harmony Simplified* (1896); Russian tradition (Sposobin) via solfamusictheory
 and college harmony programs.
+
+---
+
+## 16. Scale plans — multiple scales within one chord (v2.1 design)
+
+Real playing rarely holds one chord-scale for a whole chord: over a static `Imaj7*4`
+the line might move ionian → lydian → ionian, over a two-bar V7 mixolydian →
+altered for the last half. §16 adds a second level under the progression: a
+**scale plan** per chord — an ordered list of **segments** partitioning the chord's
+span, each segment a scale (or arpeggio) with a duration in bars. Everything in
+§5/§7 applies unchanged at this level too: segments *fit* the chord they sound
+over, and consecutive scales *resolve into each other* (or don't) by exactly the
+§7.2 mechanism.
+
+### 16.1 The reuse insight
+
+`progScoreCandidate`'s resolution term never inspects `next` as a chord — it only
+reads `next.tones[].pc/.stability`, and scale candidates already carry per-tone
+stability from the atlas. So a scale→scale transition is the same kernel with a
+scale as the target:
+
+```
+Res(seg_k → seg_k+1) = §7.2 formula, next := {tones: seg_k+1.cand.tones}
+```
+
+`T(p)` (the "needs to move" weight) stays anchored to the **chord** — the harmony
+does not change at a segment boundary, only the line's palette does — which is what
+the current code already computes. The Res block is extracted into
+`progResolution(fromTones, chordTones, target)` and shared by both call sites.
+
+Hand-computed anchors over Cmaj7 (machine-pinned in §16.7):
+
+| Transition | Res | Note |
+|---|---|---|
+| C ionian → C ionian | 0.664 | self: common tones + B→C leading-tone wrap |
+| C ionian → C lydian | 0.664 | equal! F's best destination is E in *both* scales — smoothness here is common-tone driven |
+| C ionian → C altered | 0.550 | everything resolves by half-step but only 2 common tones survive |
+| G mixolydian → G altered (over G7) | 0.526 | the classic "straighten out then go out" move is legal but a real jump |
+
+That ionian→lydian ties ionian→ionian is exactly why a second metric is needed:
+**variety**. `progScaleDistance(a, b)` = stability-weighted symmetric difference
+of the pc-sets over total mass (0 identical, 1 disjoint — same class of set math
+as the §6 dedupe key, no runtime stability derivation): dist(ionian, lydian) =
+0.113, dist(ionian, altered) = 0.623.
+
+### 16.2 Data model
+
+```js
+plan = {
+    segments: [ { id: 'ionian', bars: 2 }, { id: 'lydian', bars: 1 }, ... ],
+    links:    [ true, false, ... ]   // links[i] gates boundary seg_i → seg_(i+1)
+}
+```
+
+- Durations in bars, fractional (½ minimum — the transport's eighth grid);
+  `bars: null` on the **last** segment = absorb the remainder.
+- **Ownership:** the chord's total span belongs to the grammar (`Imaj7*4` /
+  global bars-per-chord); segments only *partition* it. Realization clamps with
+  the last-absorbs rule — a shrinking budget drops tail segments, a growing one
+  feeds the last; unknown scale ids drop their segment; an empty/invalid plan
+  realizes to `null` (= v2.0 single-pick behavior, `plState.pick` maps to a
+  one-segment plan).
+- The exit boundary (last segment → next chord) resolves into the next chord's
+  **first segment's tones** when that chord has a plan, else the next chord's
+  tones — the §7.2 behavior verbatim.
+
+### 16.3 Segment ranking
+
+Ranking a candidate `c` for slot `k` of a realized plan:
+
+```
+Score_k(c) = Fit(c, chord) + wF·resIn + wOut·resOut − wP·Pen(c, chord)
+resIn  = Res(seg_(k−1) → c)          0 when k = 0 or links[k−1] off
+resOut = Res(c → seg_(k+1))          wOut = wF;  0 when links[k] off
+       | Res(c → exitTarget)         wOut = wR;  the per-chord "resolution"
+                                               checkbox gates this (unchanged)
+```
+
+Internal boundaries weigh `wF` (flow, default 0.6); the chord-exit boundary keeps
+`wR` — so a one-segment chord scores byte-identically to v2.0 (`progSuggestForChord`),
+which the tests pin by array equality. Cards gain a **flow** meter (resIn) next to
+fit/res, and their resolution line reads segment→segment ("F (4) resolves a
+half-step up to F♯ (♯4 of lydian)") — generated from the same resolver breakdown.
+
+### 16.4 New curated data: `tension` per scale
+
+One hand-curated number per `PROG_SCALES` entry (atlas philosophy: looked up,
+never derived): ionian .15 · dorian .25 · phrygian .55 · lydian .35 ·
+mixolydian .25 · aeolian .30 · locrian .75 · harmonic minor .60 ·
+melodic minor .45 · lydian dominant .45 · phrygian dominant .70 ·
+locrian ♮2 .70 · dorian ♭2 .60 · lydian augmented .55 · altered .85 ·
+major pentatonic .10 · minor pentatonic .20 · blues .40 · bebop dominant .35 ·
+whole tone .70 · diminished .65. It powers auto-plan strategies and the
+tension-curve sparkline (§16.6); it never enters Fit/Res/Pen.
+
+### 16.5 Interaction spec (duration + evaluation)
+
+Duration is **boundary dragging on a proportional timeline** — chip widths equal
+durations; dragging a boundary (snap ½ bar) transfers bars between neighbors, so
+the total never changes. Touch/keyboard fallback: per-chip `▾` menu with ±½-bar
+stepper and presets; `[`/`]` nudge. `＋ add segment` splits the largest segment
+in half (min ½ bar) and seeds the slot with its top-ranked candidate; `✕` merges
+into the right neighbor. Span changes re-partition by the last-absorbs rule.
+Tooltips show real time ("2 bars ≈ 4.0 s at 120 BPM").
+
+Evaluation is **per boundary**: a 🔗/⛓ link icon between adjacent segment chips
+toggles whether that boundary participates in ranking (tooltip names the pair);
+toggling re-ranks both adjacent slots and drops the arrow line from both cards'
+descriptions. The chord-exit boundary keeps the existing per-chord `resolution`
+checkbox. A global `flow` master toggle + `wF` weight (safety↔color slider,
+which also reshapes wR/wP — the still-unshipped §7.4 slider) sit in the controls
+row. `✨ auto` respects the links (it scores only enabled boundaries), so manual
+toggles and auto plans compose.
+
+| Level | Control | Affects |
+|---|---|---|
+| Global | `flow` toggle + weight slider | all boundaries' inclusion/weights |
+| Per boundary (internal) | 🔗/⛓ between chips | resOut of the left + resIn of the right segment |
+| Per boundary (exit) | existing `resolution` checkbox | last segment → next chord |
+| Per segment | duration (drag / `▾` / `[`]`) | transport slots, strip width |
+
+### 16.6 Auto-plan strategies
+
+`progAutoPlan(chord, n, strategy, weights, totalBars)` — greedy, deterministic
+(full tie-breakers: score → tension → id), even bar split with last-absorbs,
+links all on, arpeggios excluded:
+
+- **topN** — the fit ranking as-is (the vanilla default);
+- **ladder** — tension strictly rising (build over a vamp);
+- **arc** — out and back, ending on the starting scale (ionian → lydian → ionian);
+- **contrast** — maximize successive `progScaleDistance` under a fit floor
+  (side-slipping).
+
+### 16.7 Test plan additions
+
+- Backward compat: `null` plan and one-segment plans reproduce
+  `progSuggestForChord` scores exactly (array equality); §7.5 anchors untouched.
+- Kernel anchors: the §16.1 table, both directions; distance anchors; distance
+  symmetry; distance 0 for identical sets.
+- Plan realization: slot math (startSlot/slots sums to budget), last-absorbs
+  under shrink/grow, min-½-bar clamp, unknown-id drop, empty → null.
+- Segment ranking: links off zeroes the matching term only; exit checkbox ==
+  `noResolve` for one-segment chords; dedupe + ordering stable.
+- Auto-plan: determinism per strategy; ladder strictly rising tension; arc
+  returns to start; contrast distance ≥ topN distance; respects n > pool → null.
+
+### 16.8 Implementation plan
+
+| Phase | Contents |
+|---|---|
+| 6 — model | `progResolution` extraction, `tension` fields, `progScaleDistance`, `progRealizePlan`, `progSuggestForSegment`, `progAutoPlan`, segment descriptions, exports, tests (§16.7). **Done** — 5435 checks green (all §16.1 anchors land exactly on the hand-computed values; one-segment plans reproduce the v2.0 ranking byte-identically, array-equality pinned). |
+| 7 — UI | plan strip (proportional timeline, boundary drag, link toggles), segment-aware cards + flow meter, `flow`/weight controls, cookie `p`/`fl`/`cw` fields. **Done** — strip chips size by duration (`flex-grow` = slots) with 🔗/⛓ boundary buttons that toggle on tap and resize on drag (½-bar snap, `#pl-planmenu` for steppers/presets/remove, `[`/`]` keyboard nudge); cards gain the `in` (resIn) meter and segment→segment resolution lines; `flow` checkbox + safety↔color slider (0.5 middle == the shipped weights) reshape wR/wF/wP through `plWeights()`; chip badges `×N`; presets/hash resets clear plans. Basic per-segment transport scheduling and neck switching shipped here too (below) — the strip would lie if silent. |
+| 8 — transport | what-changes ghost pills (pc-set diff vs the next segment), "sound the link" dyads at internal boundaries. Per-segment scheduling, segment-highlight follow and neck pill switching already shipped with Phase 7. **Done** — `plGhostTones` diffs the pc-sets and `progGhostPositions` marks the appearing tones as dashed `.pl-ghost` pills one window around the current line (toggle *what changes*, cookie `gh`); `progLinkNotes` picks each boundary's strongest *moving* resolver and the transport plays it as a from→to dyad (half-eighth grace) in place of the new segment's first line note, pulsing both cells (toggle *sound link*, cookie `ld`) — over `Imaj7[ionian→lydian]` that is F→E, the 4 falling to 3. **Bugfix that fell out of the ghost tests:** `progScalePositions`' absolute scaffold was `pc + 24 − 5·s` over pitch *classes* — subtracting the fourths changes the pitch class itself, so every string but the highest has marked (and, through the transport, *played*) wrong notes since v2.0; the scaffold is now unwrapped cumulatively from the lowest string, and per-cell "sounds the degree it claims" checks pin it (`(openPc + fret) % 12` convention, 5632 checks green; the old tests only asserted self-consistency inside the broken coordinate space). |
+| 9 — polish | tension-curve sparkline across the progression, plan presets (blues ramp, Coltrane alternation), share-link plan encoding, handbook section, Android asset refresh. **Done** — the tension strip under the chord chips renders one bar per segment (width = duration, height/opacity = `progTensionOf`, click jumps, live highlight follows the transport); the plan strip's *✨ all chords* applies a strategy to every chord at once (the blues-ramp / Coltrane-alternation recipes are "ladder/contrast over a form preset"); share links carry plans as compact suffixes (`Imaj7*4[ionian*2;lydian;ionian~01]`, `progEncodeShare`/`progDecodeShare`, junk-tolerant, legacy links unchanged); the handbook gained a *Scale plans* section and the share bullet documents suffixes; Android `www/` refreshed and asset URLs bumped to `?v=2.1`. 5647 checks green. |

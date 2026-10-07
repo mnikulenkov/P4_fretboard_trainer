@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>P4 Fretboard Trainer</title>
-    <link rel="stylesheet" href="styles.css?v=2.0">
+    <link rel="stylesheet" href="styles.css?v=2.1">
 </head>
 <body>
     <div class="container">
@@ -270,11 +270,22 @@
                             <p>The model re-derives standard pedagogy from the data alone — dorian over iim7 (aeolian's ♭6 is an avoid note), lydian over Imaj7 (ionian's 4th is), mixolydian or lydian dominant over V7 — which is the best evidence the atlas is honest. Cards are grouped by family (heptatonic / pentatonic / arpeggio) because a subset scale that contains the whole chord always scores a "safe" high fit.</p>
                         </div>
                         <div class="feature-highlight">
+                            <p><span class="tip-icon">🪜</span> <strong>Scale plans — several scales inside one chord</strong></p>
+                            <ul>
+                                <li>Any chord can carry a <strong>plan</strong>: an ordered list of scales partitioning its span — a four-bar <code>Imaj7*4</code> might run <code>ionian → lydian → ionian</code>. The plan strip shows segments <em>sized by duration</em>: drag a boundary to resize (½-bar snap), tap the <code>▾</code> for presets, and use <code>＋</code> to split the widest segment</li>
+                                <li>The same stability rules apply <em>between</em> scales: each card's <strong>in</strong> meter shows how the previous scale resolves into it, and the resolution line names its target segment. The exit into the next chord resolves into that chord's first segment when it has one</li>
+                                <li>The <strong>🔗/⛓ between chips</strong> toggles whether a boundary participates in ranking (toggling re-ranks both sides); the <strong>flow</strong> checkbox mutes all internal boundaries at once; the <strong>safety ↔ color</strong> slider reshapes the weights (its middle is the default research weighting)</li>
+                                <li><strong>✨ auto</strong> builds plans — ranked, rising tension (build over a vamp), out-and-back, or max contrast — for the selected chord or, via <em>all chords</em>, the whole progression at once</li>
+                                <li><strong>what changes</strong> draws dashed ghost pills for the tones the <em>next</em> segment introduces (see F♯ one fret above your F before you play it); <strong>sound link</strong> plays each boundary's strongest moving resolver as a grace-dyad instead of the new scale's first note — hear the 4 fall to the 3</li>
+                                <li>The <strong>tension strip</strong> under the chord chips shows every segment's color level across the whole progression (width = duration, height = tension); click a bar to jump there</li>
+                            </ul>
+                        </div>
+                        <div class="feature-highlight">
                             <p><span class="tip-icon">🎛️</span> <strong>Playing it</strong></p>
                             <ul>
                                 <li><strong>Presets</strong> — the dropdown loads ii–V–Is, the backdoor cadence, Andalusian, both 12-bar blues forms, rhythm changes, a Coltrane cycle and more — plus a <em>Jazz standards</em> group with 79 real tunes (All of Me to Giant Steps); picking one loads its changes <em>and</em> its own key, so Autumn Leaves opens in G</li>
                                 <li><strong>Transport</strong> — loops the progression at your BPM and bars-per-chord, strumming each chord while the selected scale runs up and down in eighth notes; Space toggles it, chip clicks jump, count-in optional</li>
-                                <li><strong>Share links</strong> — 🔗 copies a URL like <code>#lab=C@IIm7,V7,Imaj7</code>; opening it starts the lab on exactly that progression and root (the hash never leaves the browser)</li>
+                                <li><strong>Share links</strong> — 🔗 copies a URL like <code>#lab=C@IIm7,V7,Imaj7</code>; plans ride along as compact suffixes (<code>Imaj7*4[ionian*2;lydian;ionian]</code>), so opening it restores the progression, root <em>and</em> scale plans (the hash never leaves the browser)</li>
                             </ul>
                         </div>
                     </section>
@@ -515,18 +526,18 @@
     </div>
 
 
-    <script src="tuning.js?v=2.0"></script>
-    <script src="fretboard.js?v=2.0"></script>
-    <script src="circleOfFifths.js?v=2.0"></script>
-    <script src="sound.js?v=2.0"></script>
-    <script src="triads.js?v=2.0"></script>
-    <script src="sequences.js?v=2.0"></script>
-    <script src="mnemonics.js?v=2.0"></script>
-    <script src="intervals.js?v=2.0"></script>
-    <script src="chords.js?v=2.0"></script>
-    <script src="handbook.js?v=2.0"></script>
-    <script src="progression.js?v=2.0"></script>
-    <script src="app.js?v=2.0"></script>
+    <script src="tuning.js?v=2.1"></script>
+    <script src="fretboard.js?v=2.1"></script>
+    <script src="circleOfFifths.js?v=2.1"></script>
+    <script src="sound.js?v=2.1"></script>
+    <script src="triads.js?v=2.1"></script>
+    <script src="sequences.js?v=2.1"></script>
+    <script src="mnemonics.js?v=2.1"></script>
+    <script src="intervals.js?v=2.1"></script>
+    <script src="chords.js?v=2.1"></script>
+    <script src="handbook.js?v=2.1"></script>
+    <script src="progression.js?v=2.1"></script>
+    <script src="app.js?v=2.1"></script>
     <script>
         let currentString, currentFret, correctNote, currentChord, correctChordName;
         let currentSequencePattern = null, currentSequenceName = null;

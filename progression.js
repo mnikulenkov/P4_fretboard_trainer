@@ -117,28 +117,28 @@ const PROG_QUALITIES = {
 // exempt from the avoid-note penalty at 0.25x.
 
 const PROG_SCALES = [
-    { id: 'ionian',          name: 'major (ionian)',    family: 'heptatonic', tier: 1, degrees: [0, 2, 4, 5, 7, 9, 11],    stability: [1.00, 0.55, 0.69, 0.64, 0.82, 0.58, 0.45] },
-    { id: 'dorian',          name: 'dorian',            family: 'heptatonic', tier: 1, degrees: [0, 2, 3, 5, 7, 9, 10],    stability: [1.00, 0.55, 0.70, 0.64, 0.82, 0.58, 0.45] },
-    { id: 'phrygian',        name: 'phrygian',          family: 'heptatonic', tier: 2, degrees: [0, 1, 3, 5, 7, 8, 10],    stability: [1.00, 0.35, 0.70, 0.64, 0.82, 0.53, 0.45] },
-    { id: 'lydian',          name: 'lydian',            family: 'heptatonic', tier: 1, degrees: [0, 2, 4, 6, 7, 9, 11],    stability: [1.00, 0.55, 0.69, 0.40, 0.82, 0.58, 0.45] },
-    { id: 'mixolydian',      name: 'mixolydian',        family: 'heptatonic', tier: 1, degrees: [0, 2, 4, 5, 7, 9, 10],    stability: [1.00, 0.55, 0.69, 0.64, 0.82, 0.58, 0.45] },
-    { id: 'aeolian',         name: 'natural minor (aeolian)', family: 'heptatonic', tier: 1, degrees: [0, 2, 3, 5, 7, 8, 10],    stability: [1.00, 0.56, 0.85, 0.56, 0.75, 0.53, 0.50] },
-    { id: 'locrian',         name: 'locrian',           family: 'heptatonic', tier: 2, degrees: [0, 1, 3, 5, 6, 8, 10],    stability: [1.00, 0.35, 0.70, 0.64, 0.40, 0.58, 0.45] },
-    { id: 'harmonicMinor',   name: 'harmonic minor',    family: 'heptatonic', tier: 2, degrees: [0, 2, 3, 5, 7, 8, 11],    stability: [1.00, 0.55, 0.85, 0.56, 0.75, 0.53, 0.55] },
-    { id: 'melodicMinor',    name: 'melodic minor',     family: 'heptatonic', tier: 2, degrees: [0, 2, 3, 5, 7, 9, 11],    stability: [1.00, 0.55, 0.70, 0.60, 0.80, 0.58, 0.50] },
-    { id: 'lydianDominant',  name: 'lydian dominant',   family: 'heptatonic', tier: 1, degrees: [0, 2, 4, 6, 7, 9, 10],    stability: [1.00, 0.55, 0.69, 0.40, 0.82, 0.58, 0.45] },
-    { id: 'phrygianDominant',name: 'phrygian dominant', family: 'heptatonic', tier: 2, degrees: [0, 1, 4, 5, 7, 8, 10],    stability: [1.00, 0.40, 0.60, 0.64, 0.80, 0.53, 0.45] },
-    { id: 'locrianNat2',     name: 'locrian ♮2',        family: 'heptatonic', tier: 3, degrees: [0, 2, 3, 5, 6, 8, 10],    stability: [1.00, 0.55, 0.70, 0.64, 0.40, 0.58, 0.45] },
-    { id: 'dorianFlat2',     name: 'dorian ♭2',         family: 'heptatonic', tier: 3, degrees: [0, 1, 3, 5, 7, 9, 10],    stability: [1.00, 0.35, 0.70, 0.64, 0.82, 0.58, 0.45] },
-    { id: 'lydianAugmented', name: 'lydian augmented',  family: 'heptatonic', tier: 3, degrees: [0, 2, 4, 6, 8, 9, 11],    stability: [1.00, 0.55, 0.69, 0.40, 0.45, 0.58, 0.45] },
-    { id: 'altered',         name: 'altered',           family: 'heptatonic', tier: 2, degrees: [0, 1, 3, 4, 6, 8, 10],    stability: [1.00, 0.40, 0.35, 0.45, 0.40, 0.50, 0.50] },
-    { id: 'majorPentatonic', name: 'major pentatonic',  family: 'pentatonic', tier: 1, degrees: [0, 2, 4, 7, 9],           stability: [1.00, 0.55, 0.69, 0.82, 0.58] },
-    { id: 'minorPentatonic', name: 'minor pentatonic',  family: 'pentatonic', tier: 1, degrees: [0, 3, 5, 7, 10],          stability: [1.00, 0.70, 0.64, 0.82, 0.45] },
-    { id: 'blues',           name: 'blues',             family: 'pentatonic', tier: 1, degrees: [0, 3, 5, 6, 7, 10],       stability: [1.00, 0.70, 0.64, 0.30, 0.82, 0.45], passing: [6] },
-    { id: 'bebopDominant',   name: 'bebop dominant',    family: 'heptatonic', tier: 3, degrees: [0, 2, 4, 5, 7, 9, 10, 11], stability: [1.00, 0.55, 0.69, 0.64, 0.82, 0.58, 0.45, 0.30], passing: [11] },
-    { id: 'wholeTone',       name: 'whole tone',        family: 'hexatonic',  tier: 2, degrees: [0, 2, 4, 6, 8, 10],       stability: [1.00, 0.50, 0.55, 0.50, 0.55, 0.50] },
-    { id: 'diminishedHW',    name: 'diminished H–W',    family: 'octatonic',  tier: 2, degrees: [0, 1, 3, 4, 6, 7, 9, 10], stability: [1.00, 0.45, 0.45, 0.50, 0.45, 0.50, 0.45, 0.50] },
-    { id: 'diminishedWH',    name: 'diminished W–H',    family: 'octatonic',  tier: 2, degrees: [0, 2, 3, 5, 6, 8, 9, 11], stability: [1.00, 0.50, 0.45, 0.50, 0.45, 0.50, 0.45, 0.50] }
+    { id: 'ionian',          name: 'major (ionian)',    family: 'heptatonic', tier: 1, tension: 0.15, degrees: [0, 2, 4, 5, 7, 9, 11],    stability: [1.00, 0.55, 0.69, 0.64, 0.82, 0.58, 0.45] },
+    { id: 'dorian',          name: 'dorian',            family: 'heptatonic', tier: 1, tension: 0.25, degrees: [0, 2, 3, 5, 7, 9, 10],    stability: [1.00, 0.55, 0.70, 0.64, 0.82, 0.58, 0.45] },
+    { id: 'phrygian',        name: 'phrygian',          family: 'heptatonic', tier: 2, tension: 0.55, degrees: [0, 1, 3, 5, 7, 8, 10],    stability: [1.00, 0.35, 0.70, 0.64, 0.82, 0.53, 0.45] },
+    { id: 'lydian',          name: 'lydian',            family: 'heptatonic', tier: 1, tension: 0.35, degrees: [0, 2, 4, 6, 7, 9, 11],    stability: [1.00, 0.55, 0.69, 0.40, 0.82, 0.58, 0.45] },
+    { id: 'mixolydian',      name: 'mixolydian',        family: 'heptatonic', tier: 1, tension: 0.25, degrees: [0, 2, 4, 5, 7, 9, 10],    stability: [1.00, 0.55, 0.69, 0.64, 0.82, 0.58, 0.45] },
+    { id: 'aeolian',         name: 'natural minor (aeolian)', family: 'heptatonic', tier: 1, tension: 0.30, degrees: [0, 2, 3, 5, 7, 8, 10],    stability: [1.00, 0.56, 0.85, 0.56, 0.75, 0.53, 0.50] },
+    { id: 'locrian',         name: 'locrian',           family: 'heptatonic', tier: 2, tension: 0.75, degrees: [0, 1, 3, 5, 6, 8, 10],    stability: [1.00, 0.35, 0.70, 0.64, 0.40, 0.58, 0.45] },
+    { id: 'harmonicMinor',   name: 'harmonic minor',    family: 'heptatonic', tier: 2, tension: 0.60, degrees: [0, 2, 3, 5, 7, 8, 11],    stability: [1.00, 0.55, 0.85, 0.56, 0.75, 0.53, 0.55] },
+    { id: 'melodicMinor',    name: 'melodic minor',     family: 'heptatonic', tier: 2, tension: 0.45, degrees: [0, 2, 3, 5, 7, 9, 11],    stability: [1.00, 0.55, 0.70, 0.60, 0.80, 0.58, 0.50] },
+    { id: 'lydianDominant',  name: 'lydian dominant',   family: 'heptatonic', tier: 1, tension: 0.45, degrees: [0, 2, 4, 6, 7, 9, 10],    stability: [1.00, 0.55, 0.69, 0.40, 0.82, 0.58, 0.45] },
+    { id: 'phrygianDominant',name: 'phrygian dominant', family: 'heptatonic', tier: 2, tension: 0.70, degrees: [0, 1, 4, 5, 7, 8, 10],    stability: [1.00, 0.40, 0.60, 0.64, 0.80, 0.53, 0.45] },
+    { id: 'locrianNat2',     name: 'locrian ♮2',        family: 'heptatonic', tier: 3, tension: 0.70, degrees: [0, 2, 3, 5, 6, 8, 10],    stability: [1.00, 0.55, 0.70, 0.64, 0.40, 0.58, 0.45] },
+    { id: 'dorianFlat2',     name: 'dorian ♭2',         family: 'heptatonic', tier: 3, tension: 0.60, degrees: [0, 1, 3, 5, 7, 9, 10],    stability: [1.00, 0.35, 0.70, 0.64, 0.82, 0.58, 0.45] },
+    { id: 'lydianAugmented', name: 'lydian augmented',  family: 'heptatonic', tier: 3, tension: 0.55, degrees: [0, 2, 4, 6, 8, 9, 11],    stability: [1.00, 0.55, 0.69, 0.40, 0.45, 0.58, 0.45] },
+    { id: 'altered',         name: 'altered',           family: 'heptatonic', tier: 2, tension: 0.85, degrees: [0, 1, 3, 4, 6, 8, 10],    stability: [1.00, 0.40, 0.35, 0.45, 0.40, 0.50, 0.50] },
+    { id: 'majorPentatonic', name: 'major pentatonic',  family: 'pentatonic', tier: 1, tension: 0.10, degrees: [0, 2, 4, 7, 9],           stability: [1.00, 0.55, 0.69, 0.82, 0.58] },
+    { id: 'minorPentatonic', name: 'minor pentatonic',  family: 'pentatonic', tier: 1, tension: 0.20, degrees: [0, 3, 5, 7, 10],          stability: [1.00, 0.70, 0.64, 0.82, 0.45] },
+    { id: 'blues',           name: 'blues',             family: 'pentatonic', tier: 1, tension: 0.40, degrees: [0, 3, 5, 6, 7, 10],       stability: [1.00, 0.70, 0.64, 0.30, 0.82, 0.45], passing: [6] },
+    { id: 'bebopDominant',   name: 'bebop dominant',    family: 'heptatonic', tier: 3, tension: 0.35, degrees: [0, 2, 4, 5, 7, 9, 10, 11], stability: [1.00, 0.55, 0.69, 0.64, 0.82, 0.58, 0.45, 0.30], passing: [11] },
+    { id: 'wholeTone',       name: 'whole tone',        family: 'hexatonic',  tier: 2, tension: 0.70, degrees: [0, 2, 4, 6, 8, 10],       stability: [1.00, 0.50, 0.55, 0.50, 0.55, 0.50] },
+    { id: 'diminishedHW',    name: 'diminished H–W',    family: 'octatonic',  tier: 2, tension: 0.65, degrees: [0, 1, 3, 4, 6, 7, 9, 10], stability: [1.00, 0.45, 0.45, 0.50, 0.45, 0.50, 0.45, 0.50] },
+    { id: 'diminishedWH',    name: 'diminished W–H',    family: 'octatonic',  tier: 2, tension: 0.65, degrees: [0, 2, 3, 5, 6, 8, 9, 11], stability: [1.00, 0.50, 0.45, 0.50, 0.45, 0.50, 0.45, 0.50] }
 ];
 
 // Arpeggio candidates are generated from the quality atlas (the arpeggio IS
@@ -371,7 +371,7 @@ function progRealizeProgression(tokens, basePc) {
 
 // --- Scoring (§7) -------------------------------------------------------------
 
-const PROG_WEIGHTS = { resolve: 0.6, penalty: 0.8 };
+const PROG_WEIGHTS = { resolve: 0.6, penalty: 0.8, flow: 0.6 };
 
 function progPcDist(a, b) {
     const d = Math.abs(a - b) % 12;
@@ -422,6 +422,45 @@ function progBuildCandidates(chord) {
     return out;
 }
 
+// Resolution kernel (§7.2; §16.1): tones of `from` resolving by step into the
+// stable tones of `target`. `target` is anything with a `tones` array whose
+// entries carry {pc, stability} — the next chord, or the next plan segment's
+// scale (scale→scale transitions are the same math; T(p) stays anchored to the
+// sounding chord, whose tone map is `chordTones`). Returns {res, resolvers};
+// target tones may carry degreeName (chords) or deg (scales) for descriptions.
+function progResolution(fromTones, chordTones, target) {
+    const resolvers = [];
+    let num = 0, den = 0;
+    if (target) {
+        fromTones.forEach(ct => {
+            const T = chordTones.hasOwnProperty(ct.pc) ? 0.2 : 1.0;
+            den += T;
+            let best = null;
+            target.tones.forEach(nt => {
+                const d = progPcDist(ct.pc, nt.pc);
+                const p = progProx(d);
+                if (p > 0) {
+                    const value = p * nt.stability;
+                    if (!best || value > best.value) {
+                        best = {
+                            value: value, toPc: nt.pc, toDegreeName: nt.degreeName || null,
+                            toDeg: nt.deg, dist: d
+                        };
+                    }
+                }
+            });
+            if (best) {
+                num += T * best.value;
+                resolvers.push({
+                    pc: ct.pc, deg: ct.deg, T: T, value: T * best.value,
+                    toPc: best.toPc, toDegreeName: best.toDegreeName, toDeg: best.toDeg, dist: best.dist
+                });
+            }
+        });
+    }
+    return { res: den > 0 ? num / den : 0, resolvers: resolvers };
+}
+
 // Score one candidate against a chord and its successor (§7.1–§7.3).
 // Returns {fit, res, pen, score, overlap, resolvers, avoids} — the breakdown
 // arrays double as description data (§8).
@@ -450,32 +489,11 @@ function progScoreCandidate(candidate, chord, next, weights) {
 
     // Resolution — scale tones resolving by step into the next chord's stable
     // tones; common tones included at prox 1. T(p): a non-chord tone wants a
-    // destination (1.0); a chord tone may still connect (0.2).
-    const resolvers = [];
-    let resNum = 0, resDen = 0;
-    if (next) {
-        candidate.tones.forEach(ct => {
-            const T = chordTones.hasOwnProperty(ct.pc) ? 0.2 : 1.0;
-            resDen += T;
-            let best = null;
-            next.tones.forEach(nt => {
-                const d = progPcDist(ct.pc, nt.pc);
-                const p = progProx(d);
-                if (p > 0) {
-                    const value = p * nt.stability;
-                    if (!best || value > best.value) best = { value: value, toPc: nt.pc, toDegreeName: nt.degreeName, dist: d };
-                }
-            });
-            if (best) {
-                resNum += T * best.value;
-                resolvers.push({
-                    pc: ct.pc, deg: ct.deg, T: T, value: T * best.value,
-                    toPc: best.toPc, toDegreeName: best.toDegreeName, dist: best.dist
-                });
-            }
-        });
-    }
-    const res = resDen > 0 ? resNum / resDen : 0;
+    // destination (1.0); a chord tone may still connect (0.2). The kernel is
+    // shared with plan-segment transitions (§16.1).
+    const flow = progResolution(candidate.tones, chordTones, next);
+    const res = flow.res;
+    const resolvers = flow.resolvers;
 
     // Avoid-note penalty — a scale tone a semitone ABOVE a chord tone (avoid
     // note) or a semitone BELOW the chord root (♭9 over the root); passing
@@ -524,6 +542,272 @@ function progSuggestForChord(chord, weights) {
         (a.candidate.id < b.candidate.id ? -1 : 1));
     out.forEach((r, i) => { r.rank = i + 1; });
     return out;
+}
+
+// --- Scale plans within a chord (§16) ------------------------------------------
+//
+// A plan partitions ONE chord's span into ordered scale segments with
+// per-boundary evaluation toggles. The chord's total length stays owned by the
+// grammar (*N / bars-per-chord); segments only partition it. No plan, or a
+// single-segment plan, is exactly the v2.0 single-pick behavior.
+
+// Stability-weighted pitch-class distance between two tone sets (§16.1):
+// symmetric-difference mass over total mass — 0 for identical sets, 1 for
+// disjoint ones. Combination of looked-up stabilities only, same class of
+// set math as the §6 dedupe key.
+function progScaleDistance(aTones, bTones) {
+    const aByPc = {}, bByPc = {};
+    let diff = 0, total = 0;
+    aTones.forEach(t => { aByPc[t.pc] = t.stability; total += t.stability; });
+    bTones.forEach(t => { bByPc[t.pc] = t.stability; total += t.stability; });
+    Object.keys(aByPc).forEach(pc => { if (!bByPc.hasOwnProperty(pc)) diff += aByPc[pc]; });
+    Object.keys(bByPc).forEach(pc => { if (!aByPc.hasOwnProperty(pc)) diff += bByPc[pc]; });
+    return total > 0 ? diff / total : 0;
+}
+
+// Candidate pool for one chord keyed by id (ids are unique across
+// progBuildCandidates: scale ids plus arp-<quality> ids).
+function progCandidatePool(chord) {
+    const pool = {};
+    progBuildCandidates(chord).forEach(c => { pool[c.id] = c; });
+    return pool;
+}
+
+// Realize a plan against a chord's slot budget (eighth notes — bars*8).
+// plan: {segments: [{id, bars}], links: [bool...]} — links[i] gates the
+// boundary segments[i] -> segments[i+1]; bars null on the LAST segment means
+// "absorb the remainder" (null elsewhere is treated as 1 bar). Last-absorbs
+// clamp (§16.2): overflow truncates tail segments, a shrinking budget drops
+// them, a growing one feeds the last; kept segments are at least half a bar
+// (4 slots); unknown scale ids drop their segment. Returns
+// {segments: [{cand, bars, startSlot, slots}], links} or null when nothing
+// valid remains.
+function progRealizePlan(chord, plan, totalSlots) {
+    if (!plan || !plan.segments || !plan.segments.length) return null;
+    const pool = progCandidatePool(chord);
+    const wanted = plan.segments.filter(s => s && pool.hasOwnProperty(s.id));
+    if (!wanted.length) return null;
+    const out = [];
+    let cursor = 0;
+    wanted.forEach((seg, i) => {
+        const isLast = i === wanted.length - 1;
+        let slots;
+        if (isLast) {
+            slots = totalSlots - cursor; // absorb the remainder
+        } else {
+            const bars = seg.bars == null ? 1 : seg.bars; // null is last-only; 1 bar if it appears mid-plan
+            slots = Math.min(Math.max(4, Math.round(bars * 8)), totalSlots - cursor);
+        }
+        if (slots <= 0) return; // budget exhausted — tail truncates
+        if (!isLast && seg.bars != null && slots < 4 && out.length) {
+            out[out.length - 1].slots += slots; // runt segment merges left
+            return;
+        }
+        out.push({ cand: pool[seg.id], bars: seg.bars, startSlot: cursor, slots: slots });
+        cursor += slots;
+    });
+    if (!out.length) return null;
+    return { segments: out, links: plan.links || [] };
+}
+
+// Rank candidates for plan slot k in context (§16.3). `segs` is a realized
+// plan (progRealizePlan output). Score = fit + wF*resIn + wOut*resOut - wP*pen
+// — internal boundaries (into the next segment) weigh wF, the chord-exit
+// boundary weighs wR (v2.0 semantics); links gate the internal terms.
+// opts.exitTarget overrides the exit target ({tones: [...]} — e.g. the next
+// chord's first plan segment); opts.exitOff drops the exit term (the per-chord
+// "resolution" checkbox). Entries carry res = resOut and flow = resIn plus
+// both resolver breakdowns, so descriptions (§8) generate from them directly.
+// With a one-segment plan and no opts the scores equal progSuggestForChord.
+function progSuggestForSegment(chord, segs, k, weights, opts) {
+    weights = weights || PROG_WEIGHTS;
+    opts = opts || {};
+    const wF = weights.flow === undefined ? 0.6 : weights.flow;
+    const list = segs.segments;
+    const prev = k > 0 ? list[k - 1].cand : null;
+    const nextSeg = k + 1 < list.length ? list[k + 1].cand : null;
+    const linkIn = k > 0 && segs.links[k - 1] !== false;
+    const linkOut = k + 1 < list.length && segs.links[k] !== false;
+    const exitTarget = opts.hasOwnProperty('exitTarget') ? opts.exitTarget : (chord.next || null);
+    const exitOn = !opts.exitOff && !!exitTarget;
+    const chordTones = {};
+    chord.tones.forEach(t => { chordTones[t.pc] = t; });
+
+    const seen = {};
+    const out = [];
+    progBuildCandidates(chord).forEach(cand => {
+        const key = cand.tones.map(t => t.pc).sort((a, b) => a - b).join(',');
+        if (seen.hasOwnProperty(key)) return;
+        seen[key] = true;
+        const base = progScoreCandidate(cand, chord, null, weights);
+        let resIn = 0, inResolvers = [];
+        if (prev && linkIn) {
+            const f = progResolution(prev.tones, chordTones, cand);
+            resIn = f.res; inResolvers = f.resolvers;
+        }
+        let resOut = 0, outResolvers = [], wOut = 0;
+        if (nextSeg) {
+            if (linkOut) {
+                const f = progResolution(cand.tones, chordTones, nextSeg);
+                resOut = f.res; outResolvers = f.resolvers; wOut = wF;
+            }
+        } else if (exitOn) {
+            const f = progResolution(cand.tones, chordTones, exitTarget);
+            resOut = f.res; outResolvers = f.resolvers; wOut = weights.resolve;
+        }
+        out.push({
+            candidate: cand,
+            fit: base.fit, pen: base.pen, res: resOut, flow: resIn,
+            score: base.fit + wF * resIn + wOut * resOut - weights.penalty * base.pen,
+            overlap: base.overlap, avoids: base.avoids,
+            resolvers: outResolvers, inResolvers: inResolvers
+        });
+    });
+    out.sort((a, b) =>
+        (b.score - a.score) ||
+        (a.candidate.noteCount - b.candidate.noteCount) ||
+        (a.candidate.tier - b.candidate.tier) ||
+        (a.candidate.id < b.candidate.id ? -1 : 1));
+    out.forEach((r, i) => { r.rank = i + 1; });
+    return out;
+}
+
+// Auto-build an n-segment plan (§16.6): greedy, deterministic (score, then
+// tension, then id tie-breaks), even bar split with the last segment
+// absorbing the remainder, links all on, arpeggios excluded. strategy:
+// 'topN' (the fit ranking as-is) | 'ladder' (tension strictly rising) |
+// 'arc' (climb, descend by nearest-lower tension, end on the starting scale)
+// | 'contrast' (max successive scale distance under a fit floor).
+// totalBars optional — without it each non-last segment takes 1 bar.
+// Returns null when fewer than 2 usable scales exist.
+function progAutoPlan(chord, n, strategy, weights, totalBars) {
+    if (!(n >= 2)) return null;
+    const w = weights || PROG_WEIGHTS;
+    const wF = w.flow === undefined ? 0.6 : w.flow;
+    const sug = progSuggestForChord(chord, w).filter(s => s.candidate.family !== 'arpeggio');
+    if (sug.length < 2) return null;
+    const pool = sug.map(s => s.candidate);
+    const fitOf = {}, penOf = {};
+    sug.forEach(s => { fitOf[s.candidate.id] = s.fit; penOf[s.candidate.id] = s.pen; });
+    const tensionOf = c => {
+        const s = PROG_SCALES.find(x => x.id === c.id);
+        return s ? s.tension : 0.5;
+    };
+    const chordTones = {};
+    chord.tones.forEach(t => { chordTones[t.pc] = t; });
+    const flowScore = (cand, prev) =>
+        fitOf[cand.id] + wF * progResolution(prev.tones, chordTones, cand).res - w.penalty * penOf[cand.id];
+    const tie = (a, b, by) => by(a, b) || (a.id < b.id ? -1 : 1);
+    const climb = (prev, scored) => pool
+        .filter(c => tensionOf(c) > tensionOf(prev) + 0.04)
+        .sort((a, b) => tie(a, b, scored
+            ? (x, y) => flowScore(y, prev) - flowScore(x, prev)
+            : (x, y) => tensionOf(x) - tensionOf(y)))[0] || null;
+    const descend = prev => pool
+        .filter(c => tensionOf(c) < tensionOf(prev) - 0.04)
+        .sort((a, b) => tie(a, b, (x, y) => tensionOf(y) - tensionOf(x)))[0] || null;
+    const farthest = prev => {
+        const floor = 0.75 * Math.max.apply(null, pool.map(c => fitOf[c.id]));
+        const eligible = pool.filter(c => c.id !== prev.id && fitOf[c.id] >= floor);
+        const src = eligible.length ? eligible : pool.filter(c => c.id !== prev.id);
+        return src.sort((a, b) => tie(a, b,
+            (x, y) => progScaleDistance(prev.tones, y.tones) - progScaleDistance(prev.tones, x.tones)))[0] || null;
+    };
+
+    const seq = [pool[0]];
+    if (strategy === 'ladder') {
+        while (seq.length < n) {
+            const next = climb(seq[seq.length - 1], true);
+            if (!next) break;
+            seq.push(next);
+        }
+    } else if (strategy === 'arc') {
+        while (seq.length < Math.ceil(n / 2)) {
+            const next = climb(seq[seq.length - 1], false);
+            if (!next) break;
+            seq.push(next);
+        }
+        while (seq.length < n - 1) {
+            const next = descend(seq[seq.length - 1]);
+            if (!next) break;
+            seq.push(next);
+        }
+        if (seq.length < n) seq.push(pool[0]); // come home
+    } else if (strategy === 'contrast') {
+        while (seq.length < n) {
+            const next = farthest(seq[seq.length - 1]);
+            if (!next) break;
+            seq.push(next);
+        }
+    } else { // 'topN'
+        pool.slice(0, n).forEach(c => { if (seq.indexOf(c) === -1) seq.push(c); });
+    }
+    if (seq.length < 2) return null;
+
+    const segments = seq.map((c, i) => ({
+        id: c.id,
+        bars: i === seq.length - 1
+            ? null
+            : (totalBars ? Math.max(0.5, Math.round((2 * totalBars) / seq.length) / 2) : 1)
+    }));
+    return { segments: segments, links: [] };
+}
+
+// Ghost positions for a boundary's changing tones (§16.8): for each string
+// the current line touches, every ghost pc's frets inside the line's fret
+// window (+/-2, clamped to the neck). Pure position math.
+function progGhostPositions(linePositions, ghostPcs, stringOpenPcs) {
+    const out = [];
+    if (!linePositions.length || !ghostPcs.length) return out;
+    const frets = linePositions.map(p => p.fret);
+    const lo = Math.max(0, Math.min.apply(null, frets) - 2);
+    const hi = Math.min(13, Math.max.apply(null, frets) + 2);
+    const strings = [];
+    linePositions.forEach(p => { if (strings.indexOf(p.string) === -1) strings.push(p.string); });
+    strings.forEach(s => {
+        ghostPcs.forEach(pc => {
+            for (let oct = 0; oct < 2; oct++) {
+                const fret = ((pc - stringOpenPcs[s]) % 12 + 12) % 12 + 12 * oct;
+                if (fret >= lo && fret <= hi) out.push({ string: s, fret: fret, pc: ((pc % 12) + 12) % 12 });
+            }
+        });
+    });
+    return out;
+}
+
+// The playable position for a pitch class nearest a line's fret window —
+// the notes of the "sound the link" dyad (§16.8). Deterministic: fret
+// distance to the window's middle first, then lower strings.
+function progPositionNearPc(pc, linePositions, stringOpenPcs) {
+    if (!linePositions || !linePositions.length) return null;
+    const frets = linePositions.map(p => p.fret);
+    const mid = (Math.min.apply(null, frets) + Math.max.apply(null, frets)) / 2;
+    let best = null;
+    for (let s = 0; s < stringOpenPcs.length; s++) {
+        for (let oct = 0; oct < 2; oct++) {
+            const fret = ((pc - stringOpenPcs[s]) % 12 + 12) % 12 + 12 * oct;
+            if (fret < 0 || fret > 13) continue;
+            const score = Math.abs(fret - mid) + 0.1 * s;
+            if (!best || score < best.score) best = { string: s, fret: fret, score: score };
+        }
+    }
+    return best ? { string: best.string, fret: best.fret } : null;
+}
+
+// The strongest MOVING resolver per internal boundary (§16.8): the from→to
+// pair the "sound the link" toggle plays at the boundary instead of the new
+// segment's first eighth. Entry k is the boundary (k-1 → k); entry 0 is null.
+function progLinkNotes(chord, segs) {
+    if (!segs || segs.segments.length < 2) return null;
+    const chordTones = {};
+    chord.tones.forEach(t => { chordTones[t.pc] = t; });
+    return segs.segments.map((sg, k) => {
+        if (k === 0) return null;
+        const moving = progResolution(segs.segments[k - 1].cand.tones, chordTones, sg.cand).resolvers
+            .filter(r => r.dist > 0)
+            .sort((a, b) => b.value - a.value);
+        return moving.length ? moving[0] : null;
+    });
 }
 
 // --- Voicing and position generation (§9.1) -----------------------------------
@@ -632,9 +916,14 @@ function progScalePositions(tones, stringOpenPcs, opts) {
     opts = opts || {};
     const center = opts.centerFret === undefined ? 6 : opts.centerFret;
     const n = stringOpenPcs.length;
-    // Absolute pitch numbers, octave-correct: each lower string sounds 5
-    // semitones below the previous one (P4). The +24 lift keeps them positive.
-    const A = stringOpenPcs.map((pc, s) => pc + 24 - 5 * s);
+    // Absolute pitch numbers, octave-correct: string s sounds 5 semitones
+    // above string s+1 (P4). The unwrap is CUMULATIVE from the lowest string —
+    // a plain pc + 24 - 5*s would subtract the 5s from the pitch class itself
+    // (only string 0 stayed correct; other strings landed a fifth off). The
+    // +24 lift keeps every A positive.
+    const A = new Array(n);
+    A[n - 1] = (((stringOpenPcs[n - 1] % 12) + 12) % 12) + 24;
+    for (let s = n - 2; s >= 0; s--) A[s] = A[s + 1] + 5;
     const rootPc = tones.length ? tones[0].pc : 0;
 
     let start = null;
@@ -697,7 +986,10 @@ function progDefaultCandidate(suggestions, pickId) {
 // Card text generated from the same breakdown data the scores used — no
 // per-pair hand-written prose.
 
-function progDescribe(result, chord, next) {
+// `targetLabel` names the resolution target in prose — "the next chord" (v2.0
+// default) or e.g. "lydian" for a plan-segment target whose tones carry scale
+// degrees instead of chord degreeNames (§16.3).
+function progDescribe(result, chord, next, targetLabel) {
     const cand = result.candidate;
     const rootName = progNoteName(chord.rootPc);
     const isArp = cand.family === 'arpeggio';
@@ -718,6 +1010,10 @@ function progDescribe(result, chord, next) {
         ? (present.length ? ' — missing ' + missing.map(m => PROG_DEGREE_NAME_LABELS[m.degreeName]).join(', ') : ' — none present')
         : ' — all present';
 
+    const tLabel = targetLabel || 'the next chord';
+    const toDegText = r => r.toDegreeName
+        ? PROG_DEGREE_NAME_LABELS[r.toDegreeName]
+        : (r.toDeg != null ? PROG_SCALE_DEGREE_LABELS[r.toDeg % 12] : '');
     let resolutionText = '';
     if (next) {
         resolutionText = result.resolvers
@@ -729,12 +1025,12 @@ function progDescribe(result, chord, next) {
                 const deg = PROG_SCALE_DEGREE_LABELS[r.deg] || '';
                 const toNm = progNoteName(r.toPc);
                 if (r.dist === 0) {
-                    return nm + ' (' + deg + ') is ' + toNm + ', a stable tone of the next chord — common tone';
+                    return nm + ' (' + deg + ') is ' + toNm + ', a stable tone of ' + tLabel + ' — common tone';
                 }
                 const delta = (r.toPc - r.pc + 12) % 12;
                 const dir = delta <= 2 ? 'up' : 'down';
                 return nm + ' (' + deg + ') resolves a ' + (r.dist === 1 ? 'half-step' : 'whole-step') + ' ' + dir +
-                    ' to ' + toNm + ' (' + (PROG_DEGREE_NAME_LABELS[r.toDegreeName] || '') + ' of the next chord)';
+                    ' to ' + toNm + ' (' + toDegText(r) + ' of ' + tLabel + ')';
             }).join(' · ');
     }
 
@@ -949,7 +1245,7 @@ const PROG_STANDARDS = [
 ];
 PROG_PRESETS.push.apply(PROG_PRESETS, PROG_STANDARDS);
 
-// --- Share links (§11) ---------------------------------------------------------
+// --- Share links (§11, §16.9) ----------------------------------------------------
 
 // Root-name -> pitch class, both spellings (encode always uses PROG_NOTE_NAMES).
 const PROG_NOTE_PC = {
@@ -957,12 +1253,75 @@ const PROG_NOTE_PC = {
     'F#': 6, 'GB': 6, 'G': 7, 'G#': 8, 'AB': 8, 'A': 9, 'A#': 10, 'BB': 10, 'B': 11
 };
 
+// Display tension of a candidate (§16.4): atlas scales carry the curated
+// number; arpeggios (chord tones only) read as the calmest.
+function progTensionOf(cand) {
+    const s = PROG_SCALES.find(x => x.id === cand.id);
+    return s ? s.tension : 0.05;
+}
+
+// Plan suffix grammar (share links only — the editor itself never needs it):
+//   Imaj7*4[ionian*2;lydian;ionian~01]
+// segments joined by ';', each `id` or `id*bars` (the absorbing last segment
+// has no *bars), then optional '~' + one 1/0 per internal boundary (omitted
+// when they are all on). Commas still separate tokens; the payload is
+// URL-encoded by the DOM layer, so nothing here can collide.
+function progEncodePlanSuffix(plan) {
+    if (!plan || !plan.segments || !plan.segments.length) return '';
+    const segs = plan.segments.map(s => s.id + (s.bars != null ? '*' + s.bars : '')).join(';');
+    const links = plan.links || [];
+    const mask = plan.segments.slice(1).map((s, i) => links[i] === false ? '0' : '1').join('');
+    const hasOff = mask.indexOf('0') !== -1;
+    return '[' + segs + (hasOff ? '~' + mask : '') + ']';
+}
+
+function progDecodePlanSuffix(str) {
+    const parts = String(str).split('~');
+    if (parts.length > 2) return null;
+    const linkPart = parts.length > 1 ? parts[1] : null;
+    if (linkPart != null && !/^[01]*$/.test(linkPart)) return null;
+    const segments = [];
+    const raws = parts[0].split(';').filter(Boolean);
+    if (!raws.length) return null;
+    for (let i = 0; i < raws.length; i++) {
+        const m = /^([^*]+?)(?:\*(\d+(?:\.\d+)?|\.\d+))?$/.exec(raws[i]);
+        if (!m) return null;
+        const id = m[1];
+        const known = PROG_SCALES.some(s => s.id === id) ||
+            (id.indexOf('arp-') === 0 && PROG_QUALITIES.hasOwnProperty(id.slice(4)));
+        if (!known) return null;
+        const bars = m[2] != null ? parseFloat(m[2]) : null;
+        if (m[2] != null && (!isFinite(bars) || bars <= 0 || bars > 64)) return null;
+        segments.push({ id: id, bars: i === raws.length - 1 ? null : (bars == null ? 1 : bars) });
+    }
+    const links = [];
+    for (let i = 0; i < segments.length - 1; i++) {
+        links.push(linkPart != null && linkPart[i] === '0' ? false : true);
+    }
+    return { segments: segments, links: links };
+}
+
 // `C@IIm7,V7,Imaj7` — root name + @ + comma-joined tokens (commas never occur
 // in the grammar, and the payload is URL-encoded by the DOM layer, so '#' and
-// unicode aliases survive).
-function progEncodeShare(basePc, text) {
+// unicode aliases survive). With `plans` (chord index -> plan, §16.9) each
+// chord token gains its plan suffix; the absorbing last segment and the
+// all-on link mask encode compactly.
+function progEncodeShare(basePc, text, plans) {
     const tokens = String(text).split(/\s+/).filter(Boolean);
-    return progNoteName(basePc) + '@' + tokens.join(',');
+    let payload = tokens;
+    if (plans) {
+        // chord indexes count parseable chords/specials in order — exactly
+        // what progParseProgression expands (dots included)
+        const expanded = progParseProgression(text);
+        let ci = 0;
+        payload = expanded.map(tok => {
+            const isChord = tok.type === 'chord' || tok.type === 'special';
+            const suffix = isChord && plans[ci] ? progEncodePlanSuffix(plans[ci]) : '';
+            if (isChord) ci++;
+            return tok.source + suffix;
+        });
+    }
+    return progNoteName(basePc) + '@' + payload.join(',');
 }
 
 function progDecodeShare(str) {
@@ -970,9 +1329,30 @@ function progDecodeShare(str) {
     if (!m) return null;
     const pc = PROG_NOTE_PC[progFoldAliases(m[1]).toUpperCase()];
     if (pc === undefined) return null;
-    const text = m[2].split(',').map(tok => tok.trim()).filter(Boolean).join(' ');
+    const plans = {};
+    const textParts = [];
+    let ci = 0;
+    m[2].split(',').forEach(raw => {
+        const tok = raw.trim();
+        if (!tok) return;
+        let head = tok, suffix = null;
+        const pm = /^(.+?)\[([^\]]*)\]$/.exec(tok);
+        if (pm) {
+            head = pm[1];
+            suffix = progDecodePlanSuffix(pm[2]);
+        }
+        const isChord = head === '.' || progParseChordToken(head.replace(/\*\d+(?:\.\d+)?$/, '')).ok;
+        if (isChord) {
+            if (suffix) plans[ci] = suffix;
+            ci++;
+        }
+        textParts.push(head);
+    });
+    const text = textParts.join(' ');
     if (!text) return null;
-    return { basePc: pc, text: text };
+    const out = { basePc: pc, text: text };
+    if (Object.keys(plans).length) out.plans = plans;
+    return out;
 }
 
 // --- Top-level convenience ----------------------------------------------------
@@ -999,7 +1379,13 @@ let plState = {
     open: false, text: 'IIm7 V7 Imaj7', basePc: 0, chordIdx: 0, pick: {},
     bpm: 120, bars: 2, loop: true, countIn: false, peek: false,
     expanded: {},   // family -> true when its card list is expanded past the top 6
-    noResolve: {}   // chord index -> true when its ranking ignores the next chord
+    noResolve: {},  // chord index -> true when its ranking ignores the next chord
+    plan: {},       // chord index -> {segments: [{id, bars}], links: [bool]} (§16)
+    segIdx: 0,      // selected plan segment of the selected chord
+    flow: true,     // global master: are internal boundaries evaluated at all
+    color: 0.5,     // safety(0) <-> color(1) slider; 0.5 == the shipped weights
+    ghosts: true,   // fretboard ghost pills for the next boundary's changes (§16.8)
+    linkDyads: true // play the strongest resolver pair at segment boundaries (§16.8)
 };
 let plAnalysis = null;
 let plPulseTimers = [];
@@ -1029,7 +1415,9 @@ function plSave() {
         setCookie('p4lab', encodeURIComponent(JSON.stringify({
             t: plState.text, r: plState.basePc,
             b: plState.bpm, bc: plState.bars, l: plState.loop, ci: plState.countIn,
-            nr: plState.noResolve
+            nr: plState.noResolve,
+            p: plState.plan, fl: plState.flow, cw: plState.color,
+            gh: plState.ghosts, ld: plState.linkDyads
         })), 365);
     } catch (e) { /* cookie budget exhausted — non-fatal */ }
 }
@@ -1046,18 +1434,25 @@ function plRestore() {
         if (saved && typeof saved.l === 'boolean') plState.loop = saved.l;
         if (saved && typeof saved.ci === 'boolean') plState.countIn = saved.ci;
         if (saved && saved.nr && typeof saved.nr === 'object') plState.noResolve = saved.nr;
+        if (saved && saved.p && typeof saved.p === 'object') plState.plan = saved.p;
+        if (saved && typeof saved.fl === 'boolean') plState.flow = saved.fl;
+        if (saved && typeof saved.cw === 'number') plState.color = Math.min(1, Math.max(0, saved.cw));
+        if (saved && typeof saved.gh === 'boolean') plState.ghosts = saved.gh;
+        if (saved && typeof saved.ld === 'boolean') plState.linkDyads = saved.ld;
     } catch (e) { /* corrupted cookie — defaults stand */ }
 }
 
 // --- refresh pipeline ---------------------------------------------------------
 
 function plRefresh() {
-    plAnalysis = progAnalyze(plState.text, plState.basePc);
+    plAnalysis = progAnalyze(plState.text, plState.basePc, plWeights());
     if (plState.chordIdx >= plAnalysis.chords.length) {
         plState.chordIdx = Math.max(0, plAnalysis.chords.length - 1);
     }
     plApplyResolveWeights();
+    plRealizeAll();
     plRenderChips();
+    plRenderTension();
     plRenderRoots();
     plRenderCards();
     if (plState.open) plShowSelection();
@@ -1068,11 +1463,255 @@ function plRefresh() {
 // their ranking is fit + avoid-notes only (§7.4, per-chord option).
 function plApplyResolveWeights() {
     if (!plAnalysis) return;
+    const w = plWeights();
     plAnalysis.chords.forEach((chord, i) => {
         if (plState.noResolve[i]) {
             plAnalysis.suggestions[i] = progSuggestForChord(chord,
-                { resolve: 0, penalty: PROG_WEIGHTS.penalty });
+                { resolve: 0, penalty: w.penalty });
         }
+    });
+}
+
+// --- scale plans (§16): state helpers -------------------------------------------
+
+let plPlans = null; // chord index -> realized plan (progRealizePlan output) or null
+let plDrag = null;   // live boundary drag {i, k, moved, startX, baseBars, pxPerBar}
+
+// The safety<->color slider reshapes the three weights together (§16.5); at
+// its 0.5 middle they are exactly the shipped PROG_WEIGHTS.
+function plWeights() {
+    const v = Math.min(1, Math.max(0, plState.color));
+    return { resolve: 0.2 + 0.8 * v, flow: 0.2 + 0.8 * v, penalty: 1.2 - 0.8 * v };
+}
+
+// A chord's span in bars: its explicit "*N", else the transport's global
+// bars-per-chord setting — the budget a plan partitions (§16.2 ownership).
+function plChordSpanBars(chord) {
+    return chord && chord.bars != null ? chord.bars : plState.bars;
+}
+
+// Realize every chord's plan against its slot budget. The global flow toggle
+// mutes all internal boundaries (links read as false) without touching the
+// stored per-boundary toggles.
+function plRealizeAll() {
+    plPlans = plAnalysis ? plAnalysis.chords.map((chord, i) => {
+        const plan = plState.plan[i];
+        if (!plan || !plan.segments || !plan.segments.length) return null;
+        const links = plState.flow ? (plan.links || []) : plan.segments.map(() => false);
+        return progRealizePlan(chord, { segments: plan.segments, links: links }, plItemSlots(chord));
+    }) : null;
+}
+
+// The exit target of chord i (§16.2): the next chord's first plan segment
+// when it has one (carrying its candidate for labels), else the next chord.
+function plExitTarget(i) {
+    if (!plAnalysis || plAnalysis.chords.length < 2) return null;
+    const j = (i + 1) % plAnalysis.chords.length;
+    const nPlan = plPlans[j];
+    if (nPlan) {
+        const cand = nPlan.segments[0].cand;
+        return { tones: cand.tones, cand: cand };
+    }
+    return plAnalysis.chords[j];
+}
+
+// The selected chord's realized plan, or null when it plays the v2.0 pick.
+function plSelectedPlan() {
+    const chord = plSelectedChord();
+    if (!chord || !plPlans) return null;
+    const segs = plPlans[chord.index];
+    return segs && segs.segments.length ? segs : null;
+}
+
+function plSelectedSegIdx(segs) {
+    return Math.min(plState.segIdx, segs.segments.length - 1);
+}
+
+// The candidate a plan-less chord plays (transport + strip display).
+function plSingleCandidate(chord) {
+    return progDefaultCandidate(plAnalysis.suggestions[chord.index] || [], plState.pick[chord.index]);
+}
+
+// Ensure a plan object exists for chord i, seeded from what is already
+// playing, so "＋ add segment" grows the current choice.
+function plEnsurePlan(i) {
+    if (!plState.plan[i] || !plState.plan[i].segments || !plState.plan[i].segments.length) {
+        const seed = plAnalysis.suggestions[i] && plAnalysis.suggestions[i].length
+            ? progDefaultCandidate(plAnalysis.suggestions[i], plState.pick[i]) : null;
+        plState.plan[i] = { segments: [{ id: seed ? seed.id : 'ionian', bars: null }], links: [] };
+    }
+    return plState.plan[i];
+}
+
+// Partition invariant (§16.2): the last segment always absorbs (bars null);
+// a null mid-plan is pinned to 1 bar.
+function plNormalizePlan(plan) {
+    plan.segments.forEach((s, i) => {
+        if (i === plan.segments.length - 1) s.bars = null;
+        else if (s.bars == null) s.bars = 1;
+    });
+    if (!plan.links) plan.links = [];
+    return plan;
+}
+
+// Set segment k's length in bars (snap ½): what it takes comes from the
+// remainder the last segment absorbs; every non-last segment keeps >= ½ bar
+// and the absorber keeps >= ½ bar, so the cap is the span minus the OTHER
+// non-last segments' actual bars.
+function plSetSegBars(i, k, bars) {
+    const plan = plState.plan[i];
+    if (!plan || !plan.segments[k] || k === plan.segments.length - 1) return;
+    const span = plChordSpanBars(plAnalysis.chords[i]);
+    const others = plan.segments.reduce((a, s, idx) =>
+        idx !== k && idx !== plan.segments.length - 1 ? a + (s.bars || 1) : a, 0);
+    const maxBars = Math.max(0.5, span - 0.5 - others);
+    plan.segments[k].bars = Math.min(Math.max(0.5, Math.round(bars * 2) / 2), maxBars);
+}
+
+// Add a segment (§16.5): split the widest segment in half (½-bar floor) and
+// seed the new slot with its own top-ranked candidate.
+function plAddSegment(i) {
+    const plan = plNormalizePlan(plEnsurePlan(i));
+    if (plan.segments.length >= 8) return;
+    const span = plChordSpanBars(plAnalysis.chords[i]);
+    const used = plan.segments.slice(0, -1).reduce((a, s) => a + (s.bars || 1), 0);
+    const sizes = plan.segments.map((s, idx) =>
+        idx === plan.segments.length - 1 ? span - used : (s.bars || 1));
+    let j = 0;
+    sizes.forEach((sz, idx) => { if (sz > sizes[j]) j = idx; });
+    const others = sizes.reduce((a, sz, idx) => (idx !== j ? a + sz : a), 0);
+    // cap keeps every other segment >= 1/2 bar and the absorber >= 1/2 bar
+    const half = Math.max(0.5, Math.min(Math.round(sizes[j]) / 2, span - 0.5 - others));
+    if (j === plan.segments.length - 1) {
+        plan.segments.splice(j, 0, { id: plan.segments[j].id, bars: half }); // before the absorber
+    } else {
+        plan.segments[j].bars = half;
+        plan.segments.splice(j + 1, 0, { id: plan.segments[j].id, bars: Math.max(0.5, sizes[j] - half) });
+    }
+    plNormalizePlan(plan);
+    const k = j === sizes.length - 1 ? j : j + 1;
+    plState.segIdx = k;
+    // seed the new slot from its own segment ranking — via the practice
+    // default (top heptatonic), NOT the raw top card: arpeggios score
+    // "safely" high (§7.4) and would silently replace what was playing
+    const segs = progRealizePlan(plAnalysis.chords[i], plan, plItemSlots(plAnalysis.chords[i]));
+    if (segs) {
+        const sug = progSuggestForSegment(plAnalysis.chords[i], segs, k, plWeights(), { exitTarget: plExitTarget(i) });
+        const seed = progDefaultCandidate(sug, null);
+        if (seed) plan.segments[k].id = seed.id;
+    }
+    plPlanChanged(i);
+}
+
+// Remove segment k — its time merges into the right neighbor (a removed last
+// segment just lets the new last absorb).
+function plRemoveSegment(i, k) {
+    const plan = plState.plan[i];
+    if (!plan) return;
+    if (plan.segments.length <= 1) { plClearPlan(i); return; }
+    plan.segments.splice(k, 1);
+    plNormalizePlan(plan);
+    if (plState.segIdx >= plan.segments.length) plState.segIdx = plan.segments.length - 1;
+    plPlanChanged(i);
+}
+
+// Drop the plan entirely — back to the v2.0 single pick.
+function plClearPlan(i) {
+    delete plState.plan[i];
+    plState.segIdx = 0;
+    plPlanChanged(i);
+}
+
+// Toggle whether boundary k (segment k -> k+1) participates in ranking.
+function plToggleLink(i, k) {
+    const plan = plState.plan[i];
+    if (!plan) return;
+    if (!plan.links) plan.links = [];
+    plan.links[k] = plan.links[k] === false;
+    plPlanChanged(i);
+}
+
+// ✨ auto (§16.6): value "strategy:n".
+function plApplyAutoPlan(i, value) {
+    const m = /^(\w+):(\d+)$/.exec(value);
+    if (!m || !plAnalysis.chords[i]) return;
+    const chord = plAnalysis.chords[i];
+    const plan = progAutoPlan(chord, parseInt(m[2], 10), m[1], plWeights(), plChordSpanBars(chord));
+    if (!plan) return;
+    plState.plan[i] = plNormalizePlan(plan);
+    plState.segIdx = 0;
+    plPlanChanged(i);
+}
+
+// Shared tail for every plan mutation: re-realize, sync the running
+// transport, persist, re-render.
+function plPlanChanged(i) {
+    plRealizeAll();
+    plTransportUpdateItem(i);
+    plSave();
+    plRenderChips();
+    plRenderTension();
+    plRenderCards();
+    plShowSelection();
+}
+
+// --- tension strip (§16.9): the whole progression's color arc -------------------
+//
+// One bar per plan segment (plan-less chords show their default candidate),
+// width proportional to slots, height/opacity mapped from the atlas tension.
+// Click selects that chord+segment (and jumps a running loop).
+
+function plTensionCells() {
+    if (!plAnalysis) return [];
+    const cells = [];
+    plAnalysis.chords.forEach((chord, i) => {
+        const segs = plPlans ? plPlans[i] : null;
+        if (segs && segs.segments.length) {
+            segs.segments.forEach((sg, k) => cells.push({
+                chord: i, seg: k, slots: sg.slots, tension: progTensionOf(sg.cand),
+                label: plChordName(chord) + ' · ' + sg.cand.name
+            }));
+        } else {
+            const cand = plSingleCandidate(chord);
+            cells.push({
+                chord: i, seg: 0, slots: plItemSlots(chord),
+                tension: cand ? progTensionOf(cand) : 0,
+                label: plChordName(chord) + (cand ? ' · ' + cand.name : '')
+            });
+        }
+    });
+    return cells;
+}
+
+function plRenderTension() {
+    const wrap = document.getElementById('pl-tension');
+    if (!wrap || !plAnalysis) return;
+    wrap.innerHTML = '';
+    const cells = plTensionCells();
+    wrap.classList.toggle('hidden', !cells.length);
+    const playing = plTransport && !plTransport.audition && plTransport.activeSeg;
+    cells.forEach(c => {
+        const bar = document.createElement('button');
+        bar.type = 'button';
+        bar.className = 'pl-tbar' +
+            (playing && playing.idx === c.chord && playing.seg === c.seg ? ' active' : '') +
+            (!playing && c.chord === plState.chordIdx ? ' current' : '');
+        bar.style.flexGrow = Math.max(1, c.slots);
+        bar.title = c.label + ' — tension ' + c.tension.toFixed(2) + ' · click to select';
+        const fill = document.createElement('i');
+        fill.style.height = Math.round(15 + c.tension * 85) + '%';
+        fill.style.opacity = (0.35 + 0.65 * c.tension).toFixed(2);
+        bar.appendChild(fill);
+        bar.addEventListener('click', () => {
+            plState.chordIdx = c.chord;
+            plState.segIdx = c.seg;
+            if (plTransport && !plTransport.audition) plTransportJump(c.chord);
+            plRenderChips();
+            plRenderTension();
+            plRenderCards();
+            plShowSelection();
+        });
+        wrap.appendChild(bar);
     });
 }
 
@@ -1083,7 +1722,14 @@ function plSelectedChord() {
 
 function plSelectedSuggestions() {
     if (!plAnalysis || !plAnalysis.suggestions.length) return [];
-    return plAnalysis.suggestions[Math.min(plState.chordIdx, plAnalysis.suggestions.length - 1)] || [];
+    const i = Math.min(plState.chordIdx, plAnalysis.suggestions.length - 1);
+    const segs = plPlans ? plPlans[i] : null;
+    if (segs && segs.segments.length) {
+        // plan mode: rank for the selected segment in plan context (§16.3)
+        return progSuggestForSegment(plAnalysis.chords[i], segs, plSelectedSegIdx(segs),
+            plWeights(), { exitTarget: plExitTarget(i), exitOff: !!plState.noResolve[i] });
+    }
+    return plAnalysis.suggestions[i] || [];
 }
 
 function plRenderChips() {
@@ -1117,7 +1763,10 @@ function plRenderChips() {
             (plTransport && idx === plTransport.chordIdx ? ' pl-playing' : '');
         chip.innerHTML = '<span class="pl-deg">' + esc(chord.degreeLabel) + '</span>' +
             '<span class="pl-real">' + esc(plChordName(chord)) + '</span>' +
-            (token.bars != null ? '<span class="pl-chipbars">*' + token.bars + '</span>' : '');
+            (token.bars != null ? '<span class="pl-chipbars">*' + token.bars + '</span>' : '') +
+            (plPlans && plPlans[idx] && plPlans[idx].segments.length > 1
+                ? '<span class="pl-chipplan" title="scale plan: ' + plPlans[idx].segments.length + ' segments">×' + plPlans[idx].segments.length + '</span>'
+                : '');
         if (chord.provenance) chip.title = chord.provenance;
         if (idx === focusIdx) focusChip = chip;
         chip.addEventListener('click', () => {
@@ -1236,6 +1885,8 @@ function plApplyPreset(id) {
     plState.chordIdx = 0;
     plState.pick = {};
     plState.noResolve = {};
+    plState.plan = {}; // a new progression invalidates index-keyed plans
+    plState.segIdx = 0;
     if (typeof preset.basePc === 'number') {
         plState.basePc = ((preset.basePc % 12) + 12) % 12; // a standard loads in its own key
     }
@@ -1246,7 +1897,7 @@ function plApplyPreset(id) {
 
 function plShareUrl() {
     return location.origin + location.pathname + location.search +
-        '#lab=' + encodeURIComponent(progEncodeShare(plState.basePc, plState.text));
+        '#lab=' + encodeURIComponent(progEncodeShare(plState.basePc, plState.text, plState.plan));
 }
 
 function plCopyShare() {
@@ -1277,6 +1928,8 @@ function plApplyHash() {
     plState.chordIdx = 0;
     plState.pick = {};
     plState.noResolve = {};
+    plState.plan = decoded.plans || {}; // scale plans ride the link (§16.9)
+    plState.segIdx = 0;
     try {
         history.replaceState(null, '', location.pathname + location.search);
     } catch (e) {
@@ -1302,7 +1955,231 @@ function plMeter(label, value) {
         Math.round(Math.max(0, Math.min(1, value)) * 100) + '%"></i></span></span>';
 }
 
+// --- plan strip (§16.5): proportional segment timeline + boundary links ---------
+
+function plSegBarsLabel(slots) {
+    const b = slots / 8;
+    return b === 1 ? '1 bar' : parseFloat(b.toFixed(2)) + ' bars';
+}
+
+function plShortScaleName(cand) {
+    return String(cand.name).replace(/\s*\(.*?\)\s*/, '').trim();
+}
+
+function plSetSegmentScale(i, k, cand) {
+    const plan = plState.plan[i];
+    if (!plan || !plan.segments[k]) return;
+    plan.segments[k].id = cand.id;
+    plPlanChanged(i);
+}
+
+function plRenderPlan() {
+    const wrap = document.getElementById('pl-plan');
+    if (!wrap || !plAnalysis) return;
+    wrap.innerHTML = '';
+    const chord = plSelectedChord();
+    if (!chord) return;
+    const i = chord.index;
+    const segs = plPlans ? plPlans[i] : null;
+    const span = plChordSpanBars(chord);
+    const single = !segs || segs.segments.length < 2;
+
+    const head = document.createElement('div');
+    head.className = 'pl-plan-head';
+    head.innerHTML = '<span class="pl-plan-label">SCALE PLAN · ' +
+        (single ? 'single scale' : segs.segments.length + ' segments') +
+        ' · ' + span + (span === 1 ? ' bar' : ' bars') + '</span>';
+    const NAMES = { topN: 'ranked', ladder: 'rising tension', arc: 'out & back', contrast: 'max contrast' };
+    const play = document.createElement('button');
+    play.type = 'button';
+    play.className = 'pl-planplay';
+    play.textContent = '▶ play plan';
+    play.title = 'Audition this chord once with its whole scale plan — every segment for its own duration, link dyads at the boundaries. (Plan-less chords just play their current scale.)';
+    play.addEventListener('click', () => plStartPlanAudition(chord));
+    head.appendChild(play);
+    const auto = document.createElement('select');
+    auto.className = 'pl-planauto hb-quiz-exempt';
+    auto.title = 'Build a plan automatically (replaces the current plan for this chord)';
+    auto.appendChild(new Option('✨ auto…', ''));
+    ['topN:3', 'topN:2', 'ladder:3', 'ladder:4', 'arc:3', 'arc:5', 'contrast:3'].forEach(v => {
+        const parts = v.split(':');
+        auto.appendChild(new Option(parts[1] + ' · ' + NAMES[parts[0]], v));
+    });
+    auto.addEventListener('change', () => {
+        if (auto.value) {
+            plApplyAutoPlan(i, auto.value);
+            auto.value = '';
+        }
+    });
+    head.appendChild(auto);
+    // apply a strategy to EVERY chord at once (§16.9 — the "blues ramp" /
+    // "Coltrane alternation" use cases: pick a form, then ladder or contrast
+    // the whole progression)
+    const all = document.createElement('select');
+    all.className = 'pl-planauto hb-quiz-exempt';
+    all.title = 'Apply the strategy to every chord, each plan split to fit its own span';
+    all.appendChild(new Option('✨ all chords…', ''));
+    ['topN:3', 'ladder:3', 'ladder:2', 'arc:3', 'contrast:3'].forEach(v => {
+        const parts = v.split(':');
+        all.appendChild(new Option(parts[1] + ' · ' + NAMES[parts[0]] + ' (all)', v));
+    });
+    all.addEventListener('change', () => {
+        const m = /^(\w+):(\d+)$/.exec(all.value);
+        all.value = '';
+        if (!m || !plAnalysis) return;
+        plAnalysis.chords.forEach((chord, ci) => {
+            const plan = progAutoPlan(chord, parseInt(m[2], 10), m[1], plWeights(), plChordSpanBars(chord));
+            if (plan) plState.plan[ci] = plNormalizePlan(plan);
+        });
+        plState.segIdx = 0;
+        plPlanChanged(0);
+    });
+    head.appendChild(all);
+    wrap.appendChild(head);
+
+    const strip = document.createElement('div');
+    strip.className = 'pl-plan-strip';
+    const playing = plTransport && !plTransport.audition &&
+        plTransport.chordIdx === i && plTransport.activeSeg;
+
+    if (!segs) {
+        // v2.0 single pick: what currently plays, plus the entry point (＋)
+        const cand = plSingleCandidate(chord);
+        const chip = document.createElement('div');
+        chip.className = 'pl-seg' + (playing ? ' active' : '');
+        chip.innerHTML = '<span class="pl-segname">' +
+            (cand ? esc(progNoteName(chord.rootPc) + ' ' + plShortScaleName(cand)) : '—') + '</span>' +
+            '<span class="pl-segbars">' + plSegBarsLabel(plItemSlots(chord)) + '</span>';
+        strip.appendChild(chip);
+    } else {
+        segs.segments.forEach((seg, k) => {
+            if (k > 0) strip.appendChild(plLinkButton(i, k - 1));
+            const chip = document.createElement('div');
+            chip.className = 'pl-seg' +
+                (k === plSelectedSegIdx(segs) ? ' selected' : '') +
+                (playing && plTransport.activeSeg.seg === k ? ' active' : '');
+            chip.style.flexGrow = Math.max(1, seg.slots); // width == duration
+            chip.title = seg.cand.name + ' — click to rank for this segment, ▾ for duration';
+            chip.innerHTML = '<span class="pl-segname">' +
+                esc(progNoteName(chord.rootPc) + ' ' + plShortScaleName(seg.cand)) + '</span>' +
+                '<span class="pl-segbars">' + plSegBarsLabel(seg.slots) + '</span>' +
+                '<span class="pl-segact">▾</span>';
+            chip.addEventListener('click', e => {
+                if (e.target.classList.contains('pl-segact')) return;
+                plState.segIdx = k;
+                plRenderCards();
+                plShowSelection();
+            });
+            chip.querySelector('.pl-segact').addEventListener('click', e => {
+                e.stopPropagation();
+                plSegMenu(e.currentTarget, i, k);
+            });
+            strip.appendChild(chip);
+        });
+    }
+
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'pl-planbtn';
+    add.textContent = '＋';
+    add.title = single ? 'Split this chord into a scale plan' : 'Add a segment (splits the widest)';
+    add.addEventListener('click', () => plAddSegment(i));
+    strip.appendChild(add);
+
+    wrap.appendChild(strip);
+}
+
+// The 🔗/⛓ boundary control: click toggles evaluation, drag resizes (§16.5).
+function plLinkButton(i, k) {
+    const plan = plState.plan[i];
+    const on = plState.flow && !!plan && plan.links[k] !== false;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pl-link' + (on ? '' : ' off') + (plState.flow ? '' : ' muted');
+    btn.textContent = on ? '🔗' : '⛓';
+    btn.title = !plState.flow
+        ? 'flow is off globally — boundaries are not evaluated (see the flow checkbox)'
+        : (on ? 'boundary evaluated — click to ignore it, drag to resize'
+              : 'boundary ignored — click to evaluate it, drag to resize');
+    btn.addEventListener('pointerdown', e => plLinkPointerDown(e, i, k));
+    return btn;
+}
+
+function plLinkPointerDown(e, i, k) {
+    if (e.button !== undefined && e.button !== 0) return;
+    const plan = plState.plan[i];
+    if (!plan || !plan.segments[k]) return;
+    const strip = document.querySelector('#pl-plan .pl-plan-strip');
+    const span = plChordSpanBars(plAnalysis.chords[i]);
+    const drag = {
+        i: i, k: k, moved: false, startX: e.clientX,
+        baseBars: plan.segments[k].bars || 1,
+        pxPerBar: strip && span > 0 ? strip.clientWidth / span : 48
+    };
+    plDrag = drag;
+    const move = ev => {
+        const dx = ev.clientX - drag.startX;
+        if (!drag.moved && Math.abs(dx) < 5) return;
+        drag.moved = true;
+        plSetSegBars(i, k, drag.baseBars + dx / drag.pxPerBar);
+        plRenderPlan(); // cheap re-layout only; commit on release
+    };
+    const up = () => {
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+        plDrag = null;
+        if (drag.moved) plPlanChanged(i);
+        else plToggleLink(i, k); // a tap, not a drag
+    };
+    document.addEventListener('pointermove', move);
+    document.addEventListener('pointerup', up);
+    e.preventDefault();
+}
+
+function plHideSegMenu() {
+    const menu = document.getElementById('pl-planmenu');
+    if (menu) menu.classList.add('hidden');
+}
+
+// Per-segment ▾ menu: duration steppers/presets, remove, clear.
+function plSegMenu(anchor, i, k) {
+    const menu = document.getElementById('pl-planmenu');
+    const plan = plState.plan[i];
+    const segs = plPlans ? plPlans[i] : null;
+    if (!menu || !plan || !segs || !segs.segments[k]) return;
+    menu.innerHTML = '';
+    const isLast = k === plan.segments.length - 1;
+    const act = fn => () => { plHideSegMenu(); fn(); plPlanChanged(i); };
+    const add = (text, fn, title) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = text;
+        if (title) b.title = title;
+        b.addEventListener('click', act(fn));
+        menu.appendChild(b);
+    };
+    if (isLast) {
+        const info = document.createElement('div');
+        info.className = 'pl-planmenu-info';
+        info.textContent = 'fills the rest of the chord (' + plSegBarsLabel(segs.segments[k].slots) +
+            ') — resize via the boundary to its left';
+        menu.appendChild(info);
+    } else {
+        add('− ½ bar', () => plSetSegBars(i, k, (plan.segments[k].bars || 1) - 0.5));
+        add('+ ½ bar', () => plSetSegBars(i, k, (plan.segments[k].bars || 1) + 0.5));
+        [0.5, 1, 1.5, 2, 3, 4].forEach(bars =>
+            add(bars + (bars === 1 ? ' bar' : ' bars'), () => plSetSegBars(i, k, bars)));
+    }
+    add('✕ remove segment', () => plRemoveSegment(i, k));
+    add('clear plan (single scale)', () => plClearPlan(i));
+    const r = anchor.getBoundingClientRect();
+    menu.style.left = Math.max(8, Math.min(window.innerWidth - 230, r.left)) + 'px';
+    menu.style.top = (r.bottom + 6) + 'px';
+    menu.classList.remove('hidden');
+}
+
 function plRenderCards() {
+    plRenderPlan();
     const head = document.getElementById('pl-suggest-head');
     const wrap = document.getElementById('pl-cards');
     head.innerHTML = '';
@@ -1314,9 +2191,34 @@ function plRenderCards() {
     const resolveBox = document.getElementById('pl-resolve');
     if (resolveBox) resolveBox.checked = !plState.noResolve[chord.index];
 
+    // Plan context (§16.3): the cards' resolution lines target the next
+    // segment when one exists, else the chord exit (which may be the next
+    // chord's own first segment).
+    const segs = plPlans ? plPlans[chord.index] : null;
+    const k = segs && segs.segments.length ? plSelectedSegIdx(segs) : -1;
+    const nextSegCand = k >= 0 && k + 1 < segs.segments.length ? segs.segments[k + 1].cand : null;
+    let target = next, targetLabel = null;
+    if (nextSegCand) {
+        target = { tones: nextSegCand.tones };
+        targetLabel = progNoteName(chord.rootPc) + ' ' + plShortScaleName(nextSegCand);
+    } else if (k >= 0 && next) {
+        const exit = plExitTarget(chord.index);
+        if (exit && exit.cand) {
+            target = exit;
+            targetLabel = 'the next chord’s ' + plShortScaleName(exit.cand);
+        }
+    }
+    const ctx = { segMode: k >= 0, segK: k, target: target, targetLabel: targetLabel };
+
+    let segHead = '';
+    if (k >= 0) {
+        segHead = ' · segment ' + (k + 1) + '/' + segs.segments.length + ': ' +
+            esc(progNoteName(chord.rootPc) + ' ' + plShortScaleName(segs.segments[k].cand)) +
+            (nextSegCand ? ' → ' + esc(plShortScaleName(nextSegCand)) : '');
+    }
     head.innerHTML = '<b>' + esc(plChordName(chord)) + '</b> — ' + esc(chord.degreeLabel) +
         ' in ' + esc(progNoteName(plState.basePc)) +
-        (chord.provenance ? ' · ' + esc(chord.provenance) : '') +
+        (chord.provenance ? ' · ' + esc(chord.provenance) : '') + segHead +
         (next
             ? (plState.noResolve[chord.index]
                 ? ' · resolution off — ranked by fit &amp; avoid notes only'
@@ -1332,7 +2234,7 @@ function plRenderCards() {
         h.className = 'pl-family-head';
         h.textContent = PL_FAMILY_LABEL[family] + ' · ' + group.length;
         wrap.appendChild(h);
-        shown.forEach(s => wrap.appendChild(plCard(s, chord, next)));
+        shown.forEach(s => wrap.appendChild(plCard(s, chord, next, ctx)));
         if (group.length > PL_FAMILY_SHOW) {
             const more = document.createElement('button');
             more.type = 'button';
@@ -1351,15 +2253,22 @@ function plRenderCards() {
     });
 }
 
-function plCard(s, chord, next) {
+function plCard(s, chord, next, ctx) {
     const cand = s.candidate;
-    const desc = progDescribe(s, chord, next);
+    ctx = ctx || {};
+    const desc = progDescribe(s, chord, ctx.target || next, ctx.targetLabel);
+    const selectedId = ctx.segMode
+        ? (plState.plan[chord.index] && plState.plan[chord.index].segments[ctx.segK]
+            ? plState.plan[chord.index].segments[ctx.segK].id : null)
+        : plState.pick[chord.index];
     const card = document.createElement('div');
-    card.className = 'pl-card' + (plState.pick[chord.index] === cand.id ? ' selected' : '');
+    card.className = 'pl-card' + (selectedId === cand.id ? ' selected' : '');
     card.innerHTML =
         '<div class="pl-card-top"><span class="pl-rank">#' + s.rank + '</span>' +
         '<span class="pl-name">' + esc(desc.title) + '</span>' +
-        '<span class="pl-meters">' + plMeter('fit', s.fit) + plMeter('res', next ? s.res : 0) +
+        '<span class="pl-meters">' + plMeter('fit', s.fit) +
+        (ctx.segMode ? plMeter('in', s.flow || 0) : '') +
+        plMeter('res', (next || ctx.target) ? s.res : 0) +
         (s.pen > 0.001 ? '<span class="pl-pen">pen ' + s.pen.toFixed(2) + '</span>' : '') +
         '</span></div>' +
         '<div class="pl-formula">' + esc(desc.formula) + '</div>' +
@@ -1374,14 +2283,16 @@ function plCard(s, chord, next) {
 
     card.addEventListener('click', e => {
         if (e.target.tagName === 'BUTTON') return;
-        plSetPick(chord, cand);
+        if (ctx.segMode) plSetSegmentScale(chord.index, ctx.segK, cand);
+        else plSetPick(chord, cand);
         plRenderCards();
         plShowCandidate(chord, cand);
     });
     card.querySelectorAll('button').forEach(btn => {
         btn.addEventListener('click', e => {
             e.stopPropagation();
-            plSetPick(chord, cand);
+            if (ctx.segMode) plSetSegmentScale(chord.index, ctx.segK, cand);
+            else plSetPick(chord, cand);
             const act = btn.getAttribute('data-act');
             if (act === 'chord') plStartAudition(chord, cand, 'chord');
             else if (act === 'scale') plStartAudition(chord, cand, 'scale');
@@ -1537,10 +2448,15 @@ function plTransportStart() {
     const master = chain.master, body = chain.body;
 
     const items = plAnalysis.chords.map((chord, i) => {
-        const cand = progDefaultCandidate(plAnalysis.suggestions[i] || [], plState.pick[i]);
+        const segs = plPlans ? plPlans[i] : null;
+        const usePlan = segs && segs.segments.length;
+        const cand = usePlan ? null : progDefaultCandidate(plAnalysis.suggestions[i] || [], plState.pick[i]);
         return {
             chord: chord,
             cand: cand,
+            segs: usePlan ? segs : null,
+            segLines: usePlan ? segs.segments.map(sg => progScaleLine(sg.cand.tones, plStringOpenPcs())) : null,
+            linkNotes: usePlan ? progLinkNotes(chord, segs) : null,
             voicing: plVoicingFor(chord),
             line: cand ? progScaleLine(cand.tones, plStringOpenPcs()) : [],
             slots: plItemSlots(chord),
@@ -1581,6 +2497,8 @@ function plTransportStop() {
     plStopPulse();
     plTransportPlayButton(false);
     plRenderChips();
+    plRenderTension(); // clear the playing highlight from the tension strip
+    if (plState.open) plShowSelection(); // the neck returns to the selection
 }
 
 function plTransportToggle() {
@@ -1597,13 +2515,23 @@ function plTransportJump(idx) {
     plTransport.nextTime = Math.max(plTransport.nextTime, plTransport.ctx.currentTime + 0.05);
 }
 
-// Live pick changes while the loop runs.
+// Live pick/plan changes while the loop runs.
 function plTransportUpdateItem(idx) {
-    if (!plTransport) return;
+    if (!plTransport || plTransport.audition) return;
     const item = plTransport.items[idx];
     if (!item) return;
-    item.cand = progDefaultCandidate(plAnalysis.suggestions[idx] || [], plState.pick[idx]);
-    item.line = item.cand ? progScaleLine(item.cand.tones, plStringOpenPcs()) : [];
+    const segs = plPlans ? plPlans[idx] : null;
+    const usePlan = segs && segs.segments.length;
+    item.segs = usePlan ? segs : null;
+    item.segLines = usePlan ? segs.segments.map(sg => progScaleLine(sg.cand.tones, plStringOpenPcs())) : null;
+    item.linkNotes = usePlan ? progLinkNotes(item.chord, segs) : null;
+    if (!usePlan) {
+        item.cand = progDefaultCandidate(plAnalysis.suggestions[idx] || [], plState.pick[idx]);
+        item.line = item.cand ? progScaleLine(item.cand.tones, plStringOpenPcs()) : [];
+    } else {
+        item.cand = null;
+        item.line = [];
+    }
 }
 
 function plTransportTick() {
@@ -1630,6 +2558,25 @@ function plTransportTick() {
     }
 }
 
+// Which plan segment owns a slot (§16.5): {seg, index} or null.
+function plSegAt(item, slot) {
+    if (!item.segs) return null;
+    let found = null;
+    item.segs.segments.forEach((sg, i) => {
+        if (slot >= sg.startSlot && slot < sg.startSlot + sg.slots) found = { seg: sg, index: i };
+    });
+    return found;
+}
+
+// Neck pulse for one position (shared by the line notes and link dyads).
+function plPulseCell(pos) {
+    const el = plFretCell(pos.string, pos.fret);
+    if (el) {
+        el.classList.add('playing');
+        setTimeout(() => el.classList.remove('playing'), 300);
+    }
+}
+
 function plTransportScheduleSlot(t, when) {
     const item = t.items[t.chordIdx];
     const slot = t.slotEighth;
@@ -1645,25 +2592,112 @@ function plTransportScheduleSlot(t, when) {
         }, delayMs));
     }
 
-    if (item.line.length) {
-        const note = item.line[slot % item.line.length];
-        plTransportVoice(t, plFreq(note), when, 0.5, 0.40);
-        t.uiTimers.push(setTimeout(() => {
-            const el = plFretCell(note.string, note.fret);
-            if (el) {
-                el.classList.add('playing');
-                setTimeout(() => el.classList.remove('playing'), 300);
+    const cur = plSegAt(item, slot);
+    const line = cur ? (item.segLines ? item.segLines[cur.index] : []) : item.line;
+    let playedLink = false;
+    if (cur && cur.seg.startSlot === slot) {
+        // segment boundary: the neck switches to the new scale's pills (§16.8)
+        t.uiTimers.push(setTimeout(() => plTransportSegChange(item, cur.index), delayMs));
+        // "sound the link": play the boundary's strongest moving resolver
+        // (from-tone into to-tone) instead of the new segment's first eighth
+        if (plState.linkDyads && cur.index > 0 && item.linkNotes && item.linkNotes[cur.index]) {
+            const r = item.linkNotes[cur.index];
+            const prevLine = item.segLines ? item.segLines[cur.index - 1] : null;
+            const fromPos = prevLine && prevLine.length ? progPositionNearPc(r.pc, prevLine, plStringOpenPcs()) : null;
+            const toPos = line && line.length ? progPositionNearPc(r.toPc, line, plStringOpenPcs()) : null;
+            if (fromPos) {
+                plTransportVoice(t, plFreq(fromPos), when, 0.35, 0.32);
+                t.uiTimers.push(setTimeout(() => plPulseCell(fromPos), delayMs));
             }
-        }, delayMs));
+            if (toPos) {
+                plTransportVoice(t, plFreq(toPos), when + t.eighthSec * 0.5, 0.45, 0.36);
+                t.uiTimers.push(setTimeout(() => plPulseCell(toPos), delayMs + t.eighthSec * 500));
+            }
+            playedLink = !!(fromPos || toPos);
+        }
+    }
+    if (!playedLink && line && line.length) {
+        const note = line[slot % line.length];
+        plTransportVoice(t, plFreq(note), when, 0.5, 0.40);
+        t.uiTimers.push(setTimeout(() => plPulseCell(note), delayMs));
     }
 }
 
+// A plan audition: one pass over ONE chord with its whole realized plan —
+// every segment for its own duration, link dyads at the boundaries, the strip
+// and neck following along (follow: true) without moving the selection.
+// Plan-less chords fall back to their default/pick candidate.
+function plStartPlanAudition(chord) {
+    const ctx = typeof initAudioContext === 'function' ? initAudioContext() : null;
+    if (!ctx || !chord) return;
+    plTransportStop();
+    if (typeof stopSequencePlayback === 'function') stopSequencePlayback();
+    plStopPulse();
+    plReadTransportInputs();
+
+    const chain = plMakeChain(ctx);
+    const segs = plPlans ? plPlans[chord.index] : null;
+    const usePlan = segs && segs.segments.length;
+    const cand = usePlan ? null : progDefaultCandidate(plAnalysis.suggestions[chord.index] || [], plState.pick[chord.index]);
+    const item = {
+        chord: chord,
+        cand: cand,
+        segs: usePlan ? segs : null,
+        segLines: usePlan ? segs.segments.map(sg => progScaleLine(sg.cand.tones, plStringOpenPcs())) : null,
+        linkNotes: usePlan ? progLinkNotes(chord, segs) : null,
+        voicing: plVoicingFor(chord),
+        line: cand ? progScaleLine(cand.tones, plStringOpenPcs()) : [],
+        slots: plItemSlots(chord),
+        idx: chord.index
+    };
+    plTransport = {
+        ctx: ctx, master: chain.master, body: chain.body, voices: [], uiTimers: [],
+        items: [item], chordIdx: 0,
+        slotEighth: 0,
+        eighthSec: (60 / plState.bpm) / 2,
+        nextTime: ctx.currentTime + 0.12,
+        audition: true, // one pass, no loop, no Play-button takeover
+        follow: true    // ...but the strip/neck DO follow the segments
+    };
+    plTransport.timer = setInterval(plTransportTick, 25);
+}
+
 // Selection follows the playback: chip highlight, cards and neck re-render.
+// Auditions are one-shot probes: they mark their scale on the neck but never
+// move the user's chord/segment selection — resetting segIdx here used to
+// snap the strip and card list back to segment 1 mid-probe, so the NEXT card
+// press targeted (and overwrote) the wrong segment.
 function plTransportChordChange(item) {
+    if (plTransport && plTransport.audition) {
+        if (item.cand) plShowCandidate(item.chord, item.cand);
+        return;
+    }
     plState.chordIdx = item.idx;
+    plState.segIdx = 0;
+    plTransport.activeSeg = item.segs ? { idx: item.idx, seg: 0 } : null;
     plRenderChips();
+    plRenderTension();
     plRenderCards();
     if (item.cand) plShowCandidate(item.chord, item.cand);
+    else if (item.segs && item.segs.segments.length) {
+        plShowCandidate(item.chord, item.segs.segments[0].cand, plGhostTones(item.segs, 0));
+    }
+}
+
+// A plan segment boundary crossed during playback: highlight it in the strip
+// and switch the neck pills to the new scale (ghosts now preview the NEXT
+// boundary). Card auditions don't follow; plan auditions (follow) highlight
+// visually but still never move the selection.
+function plTransportSegChange(item, k) {
+    if (!plTransport) return;
+    if (plTransport.audition && !plTransport.follow) return;
+    plTransport.activeSeg = { idx: item.idx, seg: k };
+    if (item.idx === plState.chordIdx && item.segs && item.segs.segments[k]) {
+        if (!plTransport.audition) plState.segIdx = k;
+        plRenderPlan();
+        plRenderTension();
+        plShowCandidate(item.chord, item.segs.segments[k].cand, plGhostTones(item.segs, k));
+    }
 }
 
 function plTransportPlayButton(running) {
@@ -1689,10 +2723,18 @@ function plWriteTransportInputs() {
     const bars = document.getElementById('pl-bars');
     const loop = document.getElementById('pl-loop');
     const countIn = document.getElementById('pl-countin');
+    const flow = document.getElementById('pl-flow');
+    const color = document.getElementById('pl-color');
+    const ghosts = document.getElementById('pl-ghosts');
+    const linkDyads = document.getElementById('pl-linkdyads');
     if (bpm) bpm.value = plState.bpm;
     if (bars) bars.value = plState.bars;
     if (loop) loop.checked = plState.loop;
     if (countIn) countIn.checked = plState.countIn;
+    if (flow) flow.checked = plState.flow;
+    if (color) color.value = plState.color;
+    if (ghosts) ghosts.checked = plState.ghosts;
+    if (linkDyads) linkDyads.checked = plState.linkDyads;
 }
 
 // BPM / bars / loop apply live while the loop runs; count-in affects the next
@@ -1713,17 +2755,36 @@ function plTransportSettingsChanged() {
 
 // --- fretboard display ------------------------------------------------------------
 
+// Tones that APPEAR at the boundary into segment k+1 (§16.8): the pc-set
+// diff against the current segment — what the ghost pills mark.
+function plGhostTones(segs, k) {
+    if (!segs || k == null || k + 1 >= segs.segments.length) return null;
+    const curPcs = {};
+    segs.segments[k].cand.tones.forEach(t => { curPcs[t.pc] = true; });
+    return segs.segments[k + 1].cand.tones.filter(t => !curPcs[t.pc]);
+}
+
 function plShowSelection() {
     const chord = plSelectedChord();
     if (!chord) return;
+    const segs = plPlans ? plPlans[chord.index] : null;
+    if (segs && segs.segments.length) {
+        const k = plSelectedSegIdx(segs);
+        plShowCandidate(chord, segs.segments[k].cand, plGhostTones(segs, k));
+        return;
+    }
     const pick = plSelectedSuggestions().find(s => s.candidate.id === plState.pick[chord.index]);
     if (pick) plShowCandidate(chord, pick.candidate);
 }
 
-function plShowCandidate(chord, cand) {
+// `ghostTones` (optional): tones the NEXT segment introduces — marked as
+// dashed ghost pills so the boundary's actual fret changes are visible
+// before they happen (§16.8).
+function plShowCandidate(chord, cand, ghostTones) {
     if (typeof renderFretboard === 'function') renderFretboard();
     const marked = {};
-    progScalePositions(cand.tones, plStringOpenPcs()).forEach(p => {
+    const linePos = progScalePositions(cand.tones, plStringOpenPcs());
+    linePos.forEach(p => {
         const el = plFretCell(p.string, p.fret);
         if (!el) return;
         el.classList.add('active');
@@ -1734,6 +2795,19 @@ function plShowCandidate(chord, cand) {
         el.appendChild(pill);
         marked[p.string + ':' + p.fret] = true;
     });
+    if (ghostTones && ghostTones.length && plState.ghosts) {
+        progGhostPositions(linePos, ghostTones.map(t => t.pc), plStringOpenPcs()).forEach(gp => {
+            const el = plFretCell(gp.string, gp.fret);
+            if (!el || marked[gp.string + ':' + gp.fret]) return;
+            marked[gp.string + ':' + gp.fret] = true;
+            el.classList.add('pl-ghost');
+            const tone = ghostTones.find(t => t.pc === gp.pc);
+            const pill = document.createElement('div');
+            pill.className = 'note-display pl-ghostpill';
+            pill.textContent = tone ? PROG_SCALE_DEGREE_LABELS[tone.deg % 12] : progNoteName(gp.pc);
+            el.appendChild(pill);
+        });
+    }
     plVoicingFor(chord).forEach(p => {
         const el = plFretCell(p.string, p.fret);
         if (!el) return;
@@ -1870,6 +2944,7 @@ function closeProgressionLab() {
     plState.open = false;
     plSetPeek(false);
     plHideTip();
+    plHideSegMenu();
     plTransportStop();
     if (typeof stopSequencePlayback === 'function') stopSequencePlayback();
     const panel = document.getElementById('progression-panel');
@@ -1929,6 +3004,7 @@ function initProgressionLab() {
         '<div id="pl-ac" class="pl-ac hidden"></div>' +
         '</div>' +
         '<div id="pl-chips" class="pl-chips"></div>' +
+        '<div id="pl-tension" class="pl-tension" title="Tension across the progression — one bar per scale segment, width = duration, height = color level. Click to jump."></div>' +
         '<div class="pl-controls">' +
         '<span class="pl-roots-label">Base root</span>' +
         '<div id="pl-roots" class="pl-roots"></div>' +
@@ -1943,16 +3019,26 @@ function initProgressionLab() {
         '<label class="pl-ctl">bars/chord <input id="pl-bars" class="hb-quiz-exempt" type="number" min="1" max="8" step="1" value="2"></label>' +
         '<label class="pl-ctl pl-check"><input id="pl-loop" type="checkbox" checked> loop</label>' +
         '<label class="pl-ctl pl-check"><input id="pl-countin" type="checkbox" class="hb-quiz-exempt"> count-in</label>' +
+        '<label class="pl-ctl pl-color" title="Left: prefer safety — avoid notes weigh more. Right: prefer color — resolution and flow weigh more. The middle is the default research weighting">' +
+        'safety <input id="pl-color" class="hb-quiz-exempt" type="range" min="0" max="1" step="0.1" value="0.5"> color</label>' +
+        '<label class="pl-ctl pl-check" title="On the fretboard: dashed ghost pills mark the tones the NEXT segment introduces (the pc-set diff at the boundary) — see the move before you make it">' +
+        '<input id="pl-ghosts" type="checkbox" class="hb-quiz-exempt" checked> what changes</label>' +
+        '<label class="pl-ctl pl-check" title="At each segment boundary, play the strongest moving resolver (from-tone into to-tone) instead of the new scale’s first eighth note — hear why the transition works">' +
+        '<input id="pl-linkdyads" type="checkbox" class="hb-quiz-exempt" checked> sound link</label>' +
         '</div>' +
         '<div class="pl-suggest">' +
+        '<div id="pl-plan" class="pl-plan"></div>' +
         '<div class="pl-suggest-bar">' +
         '<div id="pl-suggest-head" class="pl-suggest-head"></div>' +
         '<label class="pl-ctl pl-check" title="Unchecked: rank this chord by fit and avoid notes only, ignoring the move into the next chord">' +
         '<input id="pl-resolve" type="checkbox" class="hb-quiz-exempt" checked> resolution</label>' +
+        '<label class="pl-ctl pl-check" title="Unchecked: internal scale-to-scale boundaries are not evaluated — fit, avoid notes and the chord exit only">' +
+        '<input id="pl-flow" type="checkbox" class="hb-quiz-exempt" checked> flow</label>' +
         '</div>' +
         '<div id="pl-cards" class="pl-cards"></div>' +
         '</div>' +
         '<div id="pl-tip" class="pl-tip hidden"></div>' +
+        '<div id="pl-planmenu" class="pl-planmenu hidden"></div>' +
         '<button type="button" class="pl-peekpill" id="pl-peekpill" title="Back to the Progression Lab (L)">🎼 Progression Lab ▲</button>';
     document.body.appendChild(panel);
 
@@ -1983,14 +3069,39 @@ function initProgressionLab() {
         if (presetSelect.value) plApplyPreset(presetSelect.value);
     });
     document.getElementById('pl-share').addEventListener('click', plCopyShare);
+    document.getElementById('pl-flow').addEventListener('change', () => {
+        plState.flow = document.getElementById('pl-flow').checked;
+        plRealizeAll();
+        plRenderCards();
+        plSave();
+    });
+    document.getElementById('pl-color').addEventListener('input', () => {
+        plState.color = parseFloat(document.getElementById('pl-color').value) || 0.5;
+        plRefresh(); // re-analyze with the reshaped weights, re-render, save
+    });
+    document.getElementById('pl-ghosts').addEventListener('change', () => {
+        plState.ghosts = document.getElementById('pl-ghosts').checked;
+        plShowSelection(); // re-mark the neck with or without ghosts
+        plSave();
+    });
+    document.getElementById('pl-linkdyads').addEventListener('change', () => {
+        plState.linkDyads = document.getElementById('pl-linkdyads').checked;
+        plSave(); // read live per boundary — nothing to rebuild
+    });
+    // the per-segment ▾ menu closes on any tap outside itself
+    document.addEventListener('pointerdown', e => {
+        const menu = document.getElementById('pl-planmenu');
+        if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target)) plHideSegMenu();
+    }, true);
     document.getElementById('pl-resolve').addEventListener('change', () => {
         const chord = plSelectedChord();
         if (!chord) return;
         const box = document.getElementById('pl-resolve');
         if (box.checked) delete plState.noResolve[chord.index];
         else plState.noResolve[chord.index] = true;
+        const w = plWeights();
         plAnalysis.suggestions[chord.index] = progSuggestForChord(chord,
-            box.checked ? PROG_WEIGHTS : { resolve: 0, penalty: PROG_WEIGHTS.penalty });
+            box.checked ? w : { resolve: 0, penalty: w.penalty });
         plTransportUpdateItem(chord.index);
         plRenderCards();
         plShowSelection();
@@ -2040,6 +3151,19 @@ function initProgressionLab() {
             // never at the expense of typing or focused buttons
             e.preventDefault();
             plTransportToggle();
+        } else if (!typing && plState.open && (e.key === '[' || e.key === ']')) {
+            // nudge the boundary right of the selected segment by ±½ bar (§16.5)
+            const chord = plSelectedChord();
+            const segs = chord && plPlans ? plPlans[chord.index] : null;
+            if (segs && segs.segments.length > 1) {
+                const k = plSelectedSegIdx(segs);
+                if (k < segs.segments.length - 1) {
+                    e.preventDefault();
+                    const plan = plState.plan[chord.index];
+                    plSetSegBars(chord.index, k, (plan.segments[k].bars || 1) + (e.key === ']' ? 0.5 : -0.5));
+                    plPlanChanged(chord.index);
+                }
+            }
         }
     });
 
@@ -2088,6 +3212,18 @@ if (typeof module !== 'undefined' && module.exports) {
         buildCandidates: progBuildCandidates,
         scoreCandidate: progScoreCandidate,
         suggestForChord: progSuggestForChord,
+        resolution: progResolution,
+        scaleDistance: progScaleDistance,
+        candidatePool: progCandidatePool,
+        realizePlan: progRealizePlan,
+        suggestForSegment: progSuggestForSegment,
+        autoPlan: progAutoPlan,
+        ghostPositions: progGhostPositions,
+        positionNearPc: progPositionNearPc,
+        linkNotes: progLinkNotes,
+        tensionOf: progTensionOf,
+        encodePlanSuffix: progEncodePlanSuffix,
+        decodePlanSuffix: progDecodePlanSuffix,
         describe: progDescribe,
         analyze: progAnalyze,
         noteName: progNoteName,
