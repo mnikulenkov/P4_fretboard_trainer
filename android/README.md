@@ -12,7 +12,7 @@ Google Play Services.
 
 ```
 android/
-├── app/src/main/assets/www/   ← the web app (13 files, copied from the repo root)
+├── app/src/main/assets/www/   ← the web app (14 files, copied from the repo root)
 ├── app/src/main/java/...      ← MainActivity: WebView shell + local asset serving
 ├── tools/make_icons.py        ← regenerates the launcher PNGs (needs Pillow)
 ├── release.keystore           ← release signing key (GITIGNORED — back it up!)
@@ -70,7 +70,7 @@ For debugging on-device: debug builds expose the WebView via USB — `adb` from
 ```bash
 cp ../index.html ../styles.css ../tuning.js ../fretboard.js ../circleOfFifths.js \
    ../sound.js ../triads.js ../sequences.js ../mnemonics.js ../intervals.js \
-   ../chords.js ../handbook.js ../app.js \
+   ../chords.js ../handbook.js ../progression.js ../app.js \
    app/src/main/assets/www/
 ```
 

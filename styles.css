@@ -111,6 +111,12 @@ h1 {
     text-align: center;
     margin-bottom: 20px;
 }
+.app-version {
+    font-size: 0.45em;
+    font-weight: 400;
+    color: var(--secondary-text);
+    vertical-align: super;
+}
 .options {
     padding: 15px;
     border-radius: 8px;
@@ -679,10 +685,12 @@ html, body {
     border: 1px solid var(--accent-color) !important;
 }
 
-/* Instructions tooltip in hidden state (also the handbook popup,
-   which reuses the same classes) */
+/* Instructions tooltip in hidden state (also the handbook popup and the
+   Progression Lab panel, which reuse the same classes — the id-keyed selector
+   is what outranks `.instructions-tooltip`'s `display: flex !important`) */
 #instructions-tooltip.hidden,
-#handbook-tooltip.hidden {
+#handbook-tooltip.hidden,
+#progression-panel.hidden {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
@@ -2451,4 +2459,544 @@ button#heatmap-toggle {
         white-space: nowrap;
         flex-shrink: 0;
     }
+}
+
+/* --- Progression Lab ---------------------------------------------------------- */
+
+.pl-popup {
+    flex-direction: column !important;
+    width: min(880px, 96vw) !important;
+    height: auto !important;
+    max-height: 88vh !important;
+    padding: 14px 18px !important;
+    gap: 10px;
+    z-index: 1002 !important; /* above the handbook */
+}
+
+/* Peek mode: the panel shrinks to a corner pill so the fretboard markings
+   it drew stay visible. Everything but the pill is hidden; the lab itself
+   (transport, marks, keyboard) keeps running. */
+#progression-panel.pl-peek {
+    top: auto !important;
+    left: auto !important;
+    right: 16px !important;
+    bottom: 16px !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: 70vw !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 4px !important;
+    gap: 0 !important;
+}
+#progression-panel.pl-peek > *:not(.pl-peekpill) {
+    display: none !important;
+}
+.pl-headbtn {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.8em;
+    padding: 2px 8px;
+    white-space: nowrap;
+}
+.pl-headbtn:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+.pl-peekpill {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: var(--tooltip-bg);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--accent-color);
+    border-radius: 999px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.85em;
+    padding: 7px 14px;
+    white-space: nowrap;
+}
+#progression-panel.pl-peek .pl-peekpill {
+    display: inline-flex !important;
+}
+.pl-peekpill:hover {
+    background: var(--accent-color);
+    color: var(--bg-color);
+}
+
+.pl-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+.pl-title {
+    font-size: 1.05em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.pl-hint {
+    color: var(--secondary-text);
+    font-size: 0.78em;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.pl-close {
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.9em;
+    padding: 2px 9px;
+}
+.pl-close:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.pl-editor {
+    position: relative;
+    flex-shrink: 0;
+}
+.pl-editor input {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-size: 1.05em;
+    padding: 8px 10px;
+}
+.pl-editor input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.pl-ac {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--tooltip-bg);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--border-color);
+    border-radius: 0 0 8px 8px;
+    z-index: 10;
+}
+.pl-ac-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.92em;
+    color: var(--secondary-text);
+}
+.pl-ac-item b {
+    color: var(--text-color);
+}
+.pl-ac-item:hover,
+.pl-ac-item.active {
+    background: rgba(0, 204, 153, 0.15);
+}
+.pl-ac-item.active b {
+    color: var(--accent-color);
+}
+
+.pl-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    align-content: flex-start;
+    min-height: 34px;
+    max-height: 11em; /* ~4–5 chip rows at any font size — long standards scroll inside */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    flex-shrink: 0; /* panel squeeze must not crush the strip to a single row */
+}
+.pl-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    color: var(--text-color);
+    cursor: pointer;
+    padding: 4px 12px;
+    font-size: 0.92em;
+}
+.pl-chip:hover {
+    border-color: var(--accent-color);
+}
+.pl-chip.selected {
+    border-color: var(--accent-color);
+    background: rgba(0, 204, 153, 0.18);
+}
+.pl-chip .pl-deg {
+    font-weight: 600;
+}
+.pl-chip .pl-real {
+    color: var(--secondary-text);
+    font-size: 0.92em;
+}
+.pl-chip.pl-error {
+    border-color: #d0021b;
+    color: #ff8080;
+    cursor: help;
+}
+.pl-chip-bar {
+    color: var(--secondary-text);
+    opacity: 0.6;
+    padding: 0 1px;
+}
+.pl-chipbars {
+    color: var(--secondary-text);
+    font-size: 0.72em;
+    margin-left: 2px;
+}
+.pl-hintline {
+    color: var(--secondary-text);
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.pl-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+.pl-roots-label {
+    color: var(--secondary-text);
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+.pl-roots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.pl-root {
+    background: var(--input-bg);
+    border: 1px solid transparent;
+    border-radius: 5px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.85em;
+    min-width: 32px;
+    padding: 3px 5px;
+}
+.pl-root:hover {
+    border-color: var(--border-color);
+}
+.pl-root.selected {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    font-weight: 600;
+}
+.pl-select {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-color);
+    font-size: 0.85em;
+    max-width: 220px;
+    padding: 3px 5px;
+}
+.pl-sharebtn {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.85em;
+    padding: 3px 8px;
+    white-space: nowrap;
+}
+.pl-sharebtn:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+/* Handbook: degree-grammar cheat-sheet table (Progression Lab section) */
+.hb-table {
+    border-collapse: collapse;
+    font-size: 0.92em;
+    margin: 8px 0 2px;
+    width: 100%;
+}
+.hb-table th,
+.hb-table td {
+    border: 1px solid var(--border-color);
+    padding: 4px 8px;
+    text-align: left;
+    vertical-align: top;
+}
+.hb-table th {
+    color: var(--secondary-text);
+    font-size: 0.85em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.hb-table td:first-child {
+    white-space: nowrap;
+}
+
+.pl-suggest {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.pl-suggest-bar {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-color);
+    padding: 2px 0 6px;
+}
+.pl-suggest-head {
+    color: var(--secondary-text);
+    font-size: 0.88em;
+}
+.pl-suggest-head b {
+    color: var(--text-color);
+}
+.pl-cards {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 2px 4px;
+}
+.pl-family-head {
+    color: var(--accent-color);
+    font-size: 0.78em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-top: 6px;
+}
+.pl-family-head:first-child {
+    margin-top: 0;
+}
+/* "+N more in this family" — an expand/collapse toggle for the family's cards */
+.pl-more {
+    background: none;
+    border: 1px dashed var(--border-color);
+    border-radius: 6px;
+    color: var(--secondary-text);
+    cursor: pointer;
+    font-size: 0.8em;
+    font-style: italic;
+    margin-left: 4px;
+    padding: 4px 10px;
+    text-align: left;
+}
+.pl-more:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.pl-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 8px 12px;
+}
+.pl-card:hover {
+    border-color: var(--accent-color);
+}
+.pl-card.selected {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 1px var(--accent-color);
+}
+.pl-card-top {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.pl-rank {
+    color: var(--secondary-text);
+    font-size: 0.8em;
+    min-width: 2.2em;
+}
+.pl-name {
+    font-weight: 600;
+}
+.pl-meters {
+    margin-left: auto;
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 0.78em;
+    color: var(--secondary-text);
+}
+.pl-meter {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.pl-bar {
+    display: inline-block;
+    width: 46px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(128, 128, 128, 0.3);
+    overflow: hidden;
+}
+.pl-bar i {
+    display: block;
+    height: 100%;
+    background: var(--accent-color);
+}
+.pl-pen {
+    color: #ff8080;
+}
+.pl-formula {
+    color: var(--accent-color);
+    font-size: 0.88em;
+    letter-spacing: 0.03em;
+    margin: 3px 0;
+}
+.pl-desc {
+    color: var(--secondary-text);
+    font-size: 0.82em;
+    line-height: 1.45;
+}
+.pl-desc.pl-avoid {
+    color: #ff8080;
+}
+.pl-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 7px;
+    flex-wrap: wrap;
+}
+.pl-actions button {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.8em;
+    padding: 3px 9px;
+}
+.pl-actions button:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+}
+
+.pl-tip {
+    position: fixed;
+    max-width: 320px;
+    background: var(--tooltip-bg);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-color);
+    font-size: 0.82em;
+    line-height: 1.5;
+    padding: 8px 11px;
+    z-index: 1003;
+    pointer-events: none;
+}
+
+/* Chord-voicing ring on the fretboard (distinct from quiz marks) */
+.fret.pl-mark-chord {
+    box-shadow: inset 0 0 0 2px rgba(90, 140, 255, 0.8);
+}
+
+[data-theme="light"] .pl-card {
+    background: rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] .pl-chip.pl-error {
+    color: #a80015;
+}
+[data-theme="light"] .pl-pen,
+[data-theme="light"] .pl-desc.pl-avoid {
+    color: #a80015;
+}
+
+@media (max-width: 600px) {
+    .pl-popup {
+        width: 100vw !important;
+        max-height: 94vh !important;
+        padding: 10px !important;
+    }
+    .pl-hint {
+        display: none;
+    }
+    .pl-meters {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+/* --- Progression Lab transport ------------------------------------------------- */
+
+.pl-transport-row {
+    border-top: 1px solid var(--border-color);
+    padding-top: 8px;
+}
+.pl-playbtn {
+    background: var(--accent-color);
+    border: none;
+    border-radius: 6px;
+    color: var(--button-text);
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    padding: 6px 14px;
+    white-space: nowrap;
+}
+.pl-playbtn:hover {
+    filter: brightness(1.1);
+}
+.pl-playbtn.running {
+    background: #d0021b;
+    color: #fff;
+}
+.pl-ctl {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--secondary-text);
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+.pl-ctl input[type="number"] {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-color);
+    font-size: 0.95em;
+    padding: 2px 5px;
+    width: 3.4em;
+}
+.pl-ctl input[type="number"]:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+.pl-check input {
+    accent-color: var(--accent-color);
+}
+.pl-chip.pl-playing {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 8px rgba(0, 204, 153, 0.6);
 }

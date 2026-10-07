@@ -324,13 +324,14 @@ function hbTuningSignature() {
     return stringTunings.join(',');
 }
 
-const hbSectionIds = ['tuning', 'intervals', 'chords', 'sequences', 'mnemonics'];
+const hbSectionIds = ['tuning', 'intervals', 'chords', 'sequences', 'mnemonics', 'lab'];
 const hbSectionTitles = {
     tuning: 'The P4 tuning',
     intervals: 'Intervals',
     chords: 'Chords & voicings',
     sequences: 'Scales & arpeggios',
-    mnemonics: 'Mnemonics'
+    mnemonics: 'Mnemonics',
+    lab: 'Progression Lab'
 };
 const hbRenderedSignature = {};
 

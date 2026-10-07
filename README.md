@@ -2,6 +2,8 @@
 
 A fretboard trainer for **all-fourths (P4) tuned** stringed instruments — guitar and bass, 4 to 8 strings. Runs as a plain web app (no frameworks, no build step, no dependencies) and ships as an offline Android app.
 
+**v2.0** — adds the Progression Lab: enter chord progressions as degrees, get ranked scale/arpeggio suggestions with audio and fretboard playback, plus a 91-preset library including 79 jazz standards each in its own key.
+
 This is a **fork** of [gWOLF3/guitartrainer](https://github.com/gWOLF3/guitartrainer), reworked for all-fourths tuning.
 
 ## What it trains

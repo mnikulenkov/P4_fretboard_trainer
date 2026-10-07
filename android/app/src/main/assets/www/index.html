@@ -8,7 +8,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>P4 Fretboard Trainer</h1>
+        <h1>P4 Fretboard Trainer <span class="app-version">v2.0</span></h1>
         
         <div id="instructions-tooltip" class="instructions-tooltip hidden">
             <h3>P4 Fretboard Trainer Guide</h3>
@@ -105,6 +105,7 @@
                 <button type="button" class="hb-nav-button" data-hb-section="chords">3 · Chords &amp; voicings</button>
                 <button type="button" class="hb-nav-button" data-hb-section="sequences">4 · Scales &amp; arpeggios</button>
                 <button type="button" class="hb-nav-button" data-hb-section="mnemonics">5 · Mnemonics</button>
+                <button type="button" class="hb-nav-button" data-hb-section="lab">6 · Progression Lab</button>
             </nav>
             <div class="hb-main">
                 <div class="hb-header">
@@ -222,6 +223,59 @@
                                     <li><strong>Neighbour shape</strong> — a shape is highlighted; pick the pattern of the shape to its left or right (left = toward the nut)</li>
                                 </ul>
                             </div>
+                        </div>
+                    </section>
+
+                    <section id="hb-sec-lab" class="hb-section hidden">
+                        <div class="feature-highlight">
+                            <p><span class="tip-icon">🎼</span> <strong>What the Progression Lab is</strong></p>
+                            <p>Type a chord progression as <strong>degrees</strong> — functions, no absolute roots — pick a <strong>base root</strong>, and the lab ranks the scales and arpeggios to play over each chord. The ranking is driven by how the scale's stable tones fit the <em>current</em> chord and resolve into the <em>next</em> one, every suggestion explains itself, and chords + scale play together so you can hear the fit. Open it with the <strong>🎼</strong> toolbar button or the <strong>L</strong> key.</p>
+                            <p><button type="button" id="hb-open-lab" class="seq-bulk">Open the Progression Lab</button></p>
+                        </div>
+                        <div class="feature-highlight">
+                            <p><span class="tip-icon">✍️</span> <strong>Writing degrees</strong></p>
+                            <ul>
+                                <li>Degrees always count in the <strong>major scale on the base root</strong>, even in minor keys — one rule, no case conventions to memorize. A minor is simply <code>Im7 bIIImaj7 bVImaj7 bVII7</code></li>
+                                <li>An uppercase numeral + the same quality suffixes the Chords mode uses: <code>Imaj7 IIm7 V7 VIIm7b5</code>. A bare numeral (<code>IV</code>) is a major triad; case never carries meaning</li>
+                                <li><code>b</code>/<code>#</code> before the numeral lowers/raises that degree: <code>bVIImaj7</code>, <code>#IVm7b5</code></li>
+                                <li><code>V7/II</code> is a <strong>secondary chord</strong>: the numerator counts from the target (here A7, dominant of Dm7). One nesting level: <code>V7/V/V</code> is rejected</li>
+                                <li><code>.</code> repeats the previous chord (vamps, 12-bar forms); <code>|</code> draws a bar line and is visual only</li>
+                                <li><code>*N</code> after a chord sets its length in bars — <code>I7*4 IV7*2</code> — fractional allowed (<code>*0.5</code> for fast changes); unset chords take the transport's bars-per-chord setting (default 2)</li>
+                                <li>Typing aids: <code>♭ ♯ Δ ø °</code> all fold to ASCII equivalents; the editor autocompletes tokens as you type (↑↓ Enter); hovering a chip dissects the token and lists alternate spellings of the same chord</li>
+                            </ul>
+                        </div>
+                        <div class="feature-highlight">
+                            <p><span class="tip-icon">🗺️</span> <strong>Common tokens</strong> <span class="mnemonics-hint">(base root C)</span></p>
+                            <table class="hb-table">
+                                <tr><th>Token</th><th>Realized</th><th>Reads as</th></tr>
+                                <tr><td><code>Imaj7</code></td><td>Cmaj7</td><td>tonic</td></tr>
+                                <tr><td><code>IIm7 V7 Imaj7</code></td><td>Dm7 G7 Cmaj7</td><td>ii–V–I</td></tr>
+                                <tr><td><code>V7/II</code></td><td>A7</td><td>secondary dominant of Dm7</td></tr>
+                                <tr><td><code>bVIImaj7</code></td><td>B♭maj7</td><td>borrowed — "backdoor" when it resolves to I</td></tr>
+                                <tr><td><code>IV7</code></td><td>F7</td><td>blues IV7 (Mixolydian borrow)</td></tr>
+                                <tr><td><code>IVm7</code></td><td>Fm7</td><td>minor iv (Aeolian borrow)</td></tr>
+                                <tr><td><code>bII7</code></td><td>D♭7</td><td>tritone substitute of V7</td></tr>
+                                <tr><td><code>#IVm7b5</code></td><td>F♯m7♭5</td><td>passing half-diminished</td></tr>
+                                <tr><td><code>V7b9</code></td><td>G7♭9</td><td>altered dominant</td></tr>
+                            </table>
+                        </div>
+                        <div class="feature-highlight">
+                            <p><span class="tip-icon">⚖️</span> <strong>How suggestions are ranked</strong></p>
+                            <p>Every chord tone and scale degree carries a <strong>pre-researched stability value</strong> — how much it sounds at rest to the ear — from listener-rating experiments (Krumhansl–Kessler probe-tone profiles) and music-theoretic models of consonance (Lerdahl's tonal pitch space, Parncutt's root-support weights). These live in a static atlas inside the lab; nothing about stability is computed from intervals at runtime. Three terms combine them:</p>
+                            <ul>
+                                <li><strong>Fit</strong> — each overlapping tone counts with <em>both</em> stabilities multiplied (scale's × chord's), normalized by the chord's total stability mass</li>
+                                <li><strong>Resolution</strong> — the scale's non-chord tones resolving by half or whole step into the next chord's stable tones (Lerdahl's melodic-attraction shape: target stability × closeness)</li>
+                                <li><strong>Penalty</strong> — avoid notes (a half step above a chord tone) and the ♭9-over-root clash, both classic voice-leading no-gos</li>
+                            </ul>
+                            <p>The model re-derives standard pedagogy from the data alone — dorian over iim7 (aeolian's ♭6 is an avoid note), lydian over Imaj7 (ionian's 4th is), mixolydian or lydian dominant over V7 — which is the best evidence the atlas is honest. Cards are grouped by family (heptatonic / pentatonic / arpeggio) because a subset scale that contains the whole chord always scores a "safe" high fit.</p>
+                        </div>
+                        <div class="feature-highlight">
+                            <p><span class="tip-icon">🎛️</span> <strong>Playing it</strong></p>
+                            <ul>
+                                <li><strong>Presets</strong> — the dropdown loads ii–V–Is, the backdoor cadence, Andalusian, both 12-bar blues forms, rhythm changes, a Coltrane cycle and more — plus a <em>Jazz standards</em> group with 79 real tunes (All of Me to Giant Steps); picking one loads its changes <em>and</em> its own key, so Autumn Leaves opens in G</li>
+                                <li><strong>Transport</strong> — loops the progression at your BPM and bars-per-chord, strumming each chord while the selected scale runs up and down in eighth notes; Space toggles it, chip clicks jump, count-in optional</li>
+                                <li><strong>Share links</strong> — 🔗 copies a URL like <code>#lab=C@IIm7,V7,Imaj7</code>; opening it starts the lab on exactly that progression and root (the hash never leaves the browser)</li>
+                            </ul>
                         </div>
                     </section>
 
@@ -471,6 +525,7 @@
     <script src="intervals.js"></script>
     <script src="chords.js"></script>
     <script src="handbook.js"></script>
+    <script src="progression.js"></script>
     <script src="app.js"></script>
     <script>
         let currentString, currentFret, correctNote, currentChord, correctChordName;
@@ -2584,6 +2639,7 @@
             // Create settings button
             const settingsButton = document.createElement('button');
             settingsButton.className = 'top-bar-button';
+            settingsButton.id = 'topbar-settings';
             settingsButton.innerHTML = '⚙️';
             settingsButton.addEventListener('click', function(event) {
                 event.stopPropagation();
@@ -2600,9 +2656,8 @@
             });
             topBar.appendChild(settingsButton);
 
-            // Create handbook button (second in the bar, right after settings;
-            // the click-outside closer's settings/CoF/help nth-child indices
-            // count it in - see the comment at the closer)
+            // Create handbook button (id-addressed — the click-outside closer
+            // looks buttons up by id, so the bar order is free to change)
             const handbookButton = document.createElement('button');
             handbookButton.className = 'top-bar-button';
             handbookButton.id = 'topbar-handbook';
@@ -2617,6 +2672,7 @@
             // Create Circle of Fifths button
             const cofButton = document.createElement('button');
             cofButton.className = 'top-bar-button';
+            cofButton.id = 'topbar-cof';
             cofButton.innerHTML = '🎵';
             cofButton.addEventListener('click', function(event) {
                 event.stopPropagation();
@@ -2641,6 +2697,7 @@
             // Create help button
             const helpButton = document.createElement('button');
             helpButton.className = 'top-bar-button';
+            helpButton.id = 'topbar-help';
             helpButton.innerHTML = '❓';
             helpButton.addEventListener('click', function(event) {
                 event.stopPropagation();
@@ -2690,6 +2747,9 @@
             // Wire the handbook (nav, close button, Esc/H keys) once the DOM is ready
             if (typeof initHandbook === 'function') initHandbook();
 
+            // Wire the Progression Lab (top-bar button, panel, L/Esc keys)
+            if (typeof initProgressionLab === 'function') initProgressionLab();
+
             console.log('Clean top bar created with all buttons');
         });
 
@@ -2730,11 +2790,11 @@
                     if (typeof closeHandbook === 'function') closeHandbook();
                 }
                 
-                // Get all toggle buttons (bar order: settings 1, handbook 2,
-                // CoF 3, help 4, theme 5, GitHub 6)
-                const cofButton = document.querySelector('.top-bar-button:nth-child(3)'); // The Circle of Fifths button
-                const helpButton = document.querySelector('.top-bar-button:nth-child(4)'); // The help button
-                const settingsButton = document.querySelector('.top-bar-button:nth-child(1)'); // The settings button
+                // Toggle buttons by id — button order in the bar is free to
+                // change (the lab button sits next to settings), so no nth-child
+                const cofButton = document.getElementById('topbar-cof'); // The Circle of Fifths button
+                const helpButton = document.getElementById('topbar-help'); // The help button
+                const settingsButton = document.getElementById('topbar-settings'); // The settings button
                 
                 // Circle of Fifths - close if click is outside and not on the button
                 if (cofTooltip && !cofTooltip.classList.contains('hidden') && 
